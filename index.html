@@ -126,7 +126,7 @@ async function doReg(){
   else{toast('Check email, then login.');authTab('login');document.getElementById('le').value=email;}
 }
 
-async function doForgot(){const e=document.getElementById('le').value.trim();if(!e){toast('Enter email first.');return;}await sb.auth.resetPasswordForEmail(e,{redirectTo:'https://partner.mypahad.in/partner.html'});toast('Reset email sent!');}
+async function doForgot(){const e=document.getElementById('le').value.trim();if(!e){toast('Enter email first.');return;}await sb.auth.resetPasswordForEmail(e,{redirectTo:'https://partner.mypahad.in/index.html'});toast('Reset email sent!');}
 
 // Category autocomplete
 async function refreshCatCache(){const {data}=await sb.from('categories').select('id,name').order('name');_catCache=data||[];}

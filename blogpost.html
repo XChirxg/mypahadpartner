@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Blog Post – MyPahad Partner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="mp.css"/>
+<style>
+body{padding-bottom:20px; background:#f0f0ee;}
+.back-bar{background:var(--g);display:flex;align-items:center;gap:8px;padding:7px 10px;position:sticky;top:0;z-index:200;}
+.back-bar-btn{background:rgba(255,255,255,0.15);border:none;color:#fff;padding:5px 9px;border-radius:var(--rs);font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit;}
+.back-bar-title{flex:1;font-size:14px;font-weight:700;color:#fff;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.back-bar-del{background:none;border:none;color:rgba(255,255,255,0.85);padding:6px;cursor:pointer;display:flex;align-items:center;}
+
+.add-body{padding:0;max-width:500px;margin:0 auto;background:#fff;min-height:calc(100vh - 44px);box-shadow:0 0 10px rgba(0,0,0,0.05);}
+.form-padding{padding:12px;}
+
+.post-media-wrapper{position:relative;background:#fff;padding:12px;}
+.post-img{width:100%;max-height:280px;object-fit:cover;border-radius:var(--r);border:1px solid var(--bd);display:block;background:var(--gl);}
+.post-yt-container{position:relative;width:100%;padding-bottom:56.25%;height:0;border-radius:var(--r);overflow:hidden;border:1px solid var(--bd);background:#000;}
+.post-yt-container iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none;}
+.post-media-edit-btn{position:absolute;top:20px;right:20px;background:rgba(0,0,0,0.6);border:none;color:#fff;border-radius:var(--rs);padding:5px 10px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit;}
+
+.post-body{background:#fff;padding:12px;}
+.post-title{font-size:17px;font-weight:700;line-height:1.3;color:var(--t);}
+.post-date{font-size:10px;color:var(--t3);margin-top:4px;display:flex;align-items:center;gap:4px;}
+.post-content{font-size:12px;color:var(--t2);margin-top:12px;line-height:1.7;}
+.post-content h2{font-size:14px;font-weight:700;margin-top:12px;margin-bottom:6px;color:var(--t);}
+.post-content p{margin-bottom:8px;}
+.post-content ul,.post-content ol{margin-left:16px;margin-bottom:8px;}
+
+.post-tags-container{display:flex;flex-wrap:wrap;gap:5px;margin-top:16px;align-items:center;}
+.post-tag{display:inline-flex;align-items:center;gap:4px;background:var(--gl);color:var(--g);border:1px solid #b5d9c5;border-radius:var(--rs);padding:3px 8px;font-size:10px;font-weight:600;}
+
+.edit-inline{background:none;border:none;padding:2px 4px;cursor:pointer;color:var(--t3);display:inline-flex;align-items:center;vertical-align:middle;margin-left:4px;}
+.edit-inline svg{display:block;}
+.edit-inline:active{color:var(--g);}
+
+.info-note{background:var(--gl);border-radius:var(--rs);padding:7px 10px;font-size:10px;color:var(--g);margin-bottom:12px;line-height:1.5;}
+.img-prev{width:80px;height:60px;border-radius:var(--rs);object-fit:cover;display:none;margin-top:6px;border:1px solid var(--bd);}
+
+/* Editor toolbar */
+.editor-toolbar{display:flex;gap:4px;background:#f5f5f5;border:1px solid var(--bd);border-bottom:none;border-radius:var(--rs) var(--rs) 0 0;padding:6px;}
+.toolbar-btn{background:#fff;border:1px solid var(--bd);border-radius:3px;font-size:10px;font-weight:700;padding:4px 8px;cursor:pointer;color:var(--t2);font-family:inherit;}
+.toolbar-btn:active{background:var(--gl);color:var(--g);}
+.editor-textarea{border:1px solid var(--bd);border-radius:0 0 var(--rs) var(--rs);padding:9px;font-size:12px;width:100%;font-family:inherit;resize:vertical;outline:none;}
+.editor-textarea:focus{border-color:var(--g);}
+
+.ie-mo{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:400;display:none;align-items:flex-end;}
+.ie-mo.open{display:flex;}
+.ie-box{background:#fff;width:100%;max-width:500px;margin:0 auto;border-radius:var(--r) var(--r) 0 0;padding:14px;max-height:85vh;overflow-y:auto;box-shadow:0 -2px 10px rgba(0,0,0,0.15);}
+.ie-title{font-size:13px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
+.chip-btn{background:#fff;border:1px solid var(--bd);padding:5px 10px;border-radius:var(--rs);font-size:11px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:4px;color:var(--t2);margin-top:6px;}
+.chip-btn:active{background:var(--gl);}
+</style>
+</head>
+<body>
+<div id="toast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:7px 16px;border-radius:20px;z-index:9999;font-size:11px;white-space:nowrap;display:none;"></div>
+
+<!-- BACK BAR -->
+<div class="back-bar">
+  <button class="back-bar-btn" onclick="goBack()">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    Back
+  </button>
+  <span class="back-bar-title" id="post-title-nav">Write Blog Post</span>
+  <button class="back-bar-del" id="btn-del-post" style="display:none;" onclick="deletePost()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+  </button>
+</div>
+
+<!-- PAGE BODY CONTAINER -->
+<div class="add-body" id="post-page-container">
+  <div style="text-align:center;padding:30px;color:var(--t3);font-size:12px;">Loading...</div>
+</div>
+
+<!-- INLINE EDIT MODAL -->
+<div class="ie-mo" id="le-mo" onclick="closeLE(event)">
+  <div class="ie-box">
+    <div class="ie-title"><span id="le-title">Edit Field</span><button onclick="closeLE()" style="background:none;border:none;font-size:18px;color:var(--t3);cursor:pointer;">×</button></div>
+    <div id="le-body"></div>
+    <div style="display:flex;gap:7px;margin-top:12px;">
+      <button class="btn-pri" id="le-save-btn" onclick="saveLE()">Save</button>
+      <button class="btn-sm" style="flex:1;" onclick="closeLE()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SU='https://khbotkadtbkwqxjxlyhm.supabase.co';
+const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoYm90a2FkdGJrd3F4anhseWhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NTU4OTAsImV4cCI6MjA4ODUzMTg5MH0.MnNTuoONyBTGZeO1qYyRUTtkRdFreK0OrOcYk66pWxs';
+const {createClient}=supabase;
+const sb=createClient(SU,SK);
+let cu=null, biz=null, postId=null, currentPost=null, leSaveFunc=null;
+
+const editIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',2200);}
+
+function goBack() {
+  if (document.referrer && (document.referrer.includes('profile.html') || document.referrer.includes('stats.html'))) {
+    window.history.back();
+  } else {
+    window.location.href = 'profile.html';
+  }
+}
+
+function insertStyle(tag) {
+  const txt = document.getElementById('econtent');
+  const start = txt.selectionStart;
+  const end = txt.selectionEnd;
+  const selText = txt.value.substring(start, end);
+  let replacement = '';
+  if (tag === 'b') replacement = `<strong>${selText}</strong>`;
+  else if (tag === 'i') replacement = `<em>${selText}</em>`;
+  else if (tag === 'h2') replacement = `<h2>${selText}</h2>`;
+  else if (tag === 'ul') replacement = `<ul>\n  <li>${selText || 'List item'}</li>\n</ul>`;
+  
+  txt.value = txt.value.substring(0, start) + replacement + txt.value.substring(end);
+  txt.focus();
+  
+  const offset = replacement.indexOf(selText);
+  txt.setSelectionRange(start + offset, start + offset + selText.length);
+}
+
+function insertStyleLE(tag) {
+  const txt = document.getElementById('le-inp');
+  const start = txt.selectionStart;
+  const end = txt.selectionEnd;
+  const selText = txt.value.substring(start, end);
+  let replacement = '';
+  if (tag === 'b') replacement = `<strong>${selText}</strong>`;
+  else if (tag === 'i') replacement = `<em>${selText}</em>`;
+  else if (tag === 'h2') replacement = `<h2>${selText}</h2>`;
+  else if (tag === 'ul') replacement = `<ul>\n  <li>${selText || 'List item'}</li>\n</ul>`;
+  
+  txt.value = txt.value.substring(0, start) + replacement + txt.value.substring(end);
+  txt.focus();
+  
+  const offset = replacement.indexOf(selText);
+  txt.setSelectionRange(start + offset, start + offset + selText.length);
+}
+
+function insertStyleLEFull(tag) {
+  const txt = document.getElementById('le-content-inp');
+  const start = txt.selectionStart;
+  const end = txt.selectionEnd;
+  const selText = txt.value.substring(start, end);
+  let replacement = '';
+  if (tag === 'b') replacement = `<strong>${selText}</strong>`;
+  else if (tag === 'i') replacement = `<em>${selText}</em>`;
+  else if (tag === 'h2') replacement = `<h2>${selText}</h2>`;
+  else if (tag === 'ul') replacement = `<ul>\n  <li>${selText || 'List item'}</li>\n</ul>`;
+  
+  txt.value = txt.value.substring(0, start) + replacement + txt.value.substring(end);
+  txt.focus();
+  
+  const offset = replacement.indexOf(selText);
+  txt.setSelectionRange(start + offset, start + offset + selText.length);
+}
+
+function toggleMediaFields(val) {
+  if(val === 'image') {
+    document.getElementById('media-field-image').classList.remove('hidden');
+    document.getElementById('media-field-youtube').classList.add('hidden');
+  } else {
+    document.getElementById('media-field-image').classList.add('hidden');
+    document.getElementById('media-field-youtube').classList.remove('hidden');
+  }
+}
+
+function prvImg(inp,pid,urlId){
+  const f=inp.files[0];if(!f)return;
+  if(urlId){const u=document.getElementById(urlId);if(u)u.value='';}
+  const r=new FileReader();
+  r.onload=e=>{
+    const p=document.getElementById(pid);p.src=e.target.result;p.style.display='block';
+    const delBtn = document.getElementById('btn-del-img') || document.getElementById('btn-del-img-modal');
+    if (delBtn) delBtn.style.display='inline';
+  };
+  r.readAsDataURL(f);
+}
+
+function prvImgUrl(url,pid,fileId){
+  if(fileId){const f=document.getElementById(fileId);if(f)f.value='';}
+  const p=document.getElementById(pid);if(!p)return;
+  if(url.trim()){
+    p.src=url.trim();p.style.display='block';
+    const delBtn = document.getElementById('btn-del-img') || document.getElementById('btn-del-img-modal');
+    if (delBtn) delBtn.style.display='inline';
+  } else {
+    p.src='';p.style.display='none';
+    const delBtn = document.getElementById('btn-del-img') || document.getElementById('btn-del-img-modal');
+    if (delBtn) delBtn.style.display='none';
+  }
+}
+
+function clearImg(){
+  document.getElementById('eimg').value='';
+  document.getElementById('eimgurl').value='';
+  const p=document.getElementById('eimgp');p.src='';p.style.display='none';
+  document.getElementById('btn-del-img').style.display='none';
+}
+
+function clearImgModal(){
+  document.getElementById('le-imgf').value='';
+  document.getElementById('le-imgurl').value='';
+  const p=document.getElementById('le-imgp');p.src='';p.style.display='none';
+  document.getElementById('btn-del-img-modal').style.display='none';
+}
+
+async function compress(file,kb=100){
+  return new Promise(res=>{
+    const r=new FileReader();r.onload=e=>{
+      const img=new Image();img.onload=()=>{
+        const c=document.createElement('canvas');let w=img.width,h=img.height,mx=800;
+        if(w>mx||h>mx){if(w>h){h=Math.round(h*mx/w);w=mx;}else{w=Math.round(w*mx/h);h=mx;}}
+        c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
+        let q=0.85;const go=()=>{const d=c.toDataURL('image/webp',q);if((d.length*3/4)/1024>kb&&q>0.1){q-=0.1;go();}else res(d);};go();
+      };img.src=e.target.result;
+    };r.readAsDataURL(file);
+  });
+}
+
+function generateUUID() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+function generateSlug(text) {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
+}
+
+function getYouTubeEmbedHtml(url) {
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  const id = (match && match[2].length === 11) ? match[2] : null;
+  if (!id) return `<div style="text-align:center;padding:20px;border:1px dashed var(--bd);border-radius:var(--r);font-size:11px;color:var(--t3);">Invalid YouTube Video link.</div>`;
+  return `
+    <div class="post-yt-container">
+      <iframe src="https://www.youtube.com/embed/${id}" allowfullscreen></iframe>
+    </div>
+  `;
+}
+
+async function loadPostData(){
+  const urlParams = new URLSearchParams(window.location.search);
+  postId = urlParams.get('id');
+  if(!postId) {
+    // Creation Mode
+    document.getElementById('post-title-nav').textContent = 'Write Blog Post';
+    document.getElementById('btn-del-post').style.display = 'none';
+    renderCreationForm();
+    return;
+  }
+
+  // Edit Mode
+  document.getElementById('btn-del-post').style.display = 'block';
+  document.getElementById('post-title-nav').textContent = 'Edit Blog Post';
+
+  const {data: post, error} = await sb.from('posts').select('*').eq('id', postId).single();
+  if (error || !post) {
+    toast('Error loading post.');
+    setTimeout(() => window.location.href = 'profile.html', 1500);
+    return;
+  }
+  
+  currentPost = post;
+  renderDetails();
+}
+
+function renderCreationForm() {
+  const container = document.getElementById('post-page-container');
+  container.innerHTML = `
+    <div class="form-padding">
+      <div class="info-note">Write updates, share stories, or post guides to attract search traffic and promote your shop.</div>
+
+      <div class="fg">
+        <label>Title *</label>
+        <input type="text" id="etitle" placeholder="e.g. Grand Opening of our new outlet!"/>
+      </div>
+
+      <div class="fg">
+        <label>Post Content * <span style="font-weight:400;color:var(--t3);">(Supports formatting)</span></label>
+        <div class="editor-toolbar">
+          <button type="button" class="toolbar-btn" onclick="insertStyle('b')">B</button>
+          <button type="button" class="toolbar-btn" onclick="insertStyle('i')">I</button>
+          <button type="button" class="toolbar-btn" onclick="insertStyle('h2')">Header</button>
+          <button type="button" class="toolbar-btn" onclick="insertStyle('ul')">Bullet List</button>
+        </div>
+        <textarea id="econtent" class="editor-textarea" rows="8" placeholder="Tell your story... select text and click toolbar buttons to format."></textarea>
+      </div>
+
+      <div class="fg">
+        <label>Post Tags <span style="font-weight:400;color:var(--t3);">(comma separated, e.g. news, recipes, health)</span></label>
+        <input type="text" id="etags" placeholder="e.g. announcement, sale, winter"/>
+      </div>
+
+      <div class="fg">
+        <label>Media Link Type</label>
+        <select id="emedia_type" onchange="toggleMediaFields(this.value)">
+          <option value="image">Upload Image</option>
+          <option value="youtube">YouTube Video Link</option>
+        </select>
+      </div>
+
+      <!-- IMAGE FIELDS -->
+      <div id="media-field-image" class="fg">
+        <label>Upload Image</label>
+        <input type="file" id="eimg" accept="image/*" onchange="prvImg(this,'eimgp','eimgurl')"/>
+        <div style="margin:4px 0;font-size:11px;color:var(--t3);text-align:center;">— OR —</div>
+        <input type="url" id="eimgurl" placeholder="Paste image URL (https://...)" oninput="prvImgUrl(this.value,'eimgp','eimg')"/>
+        <div style="margin-top:4px;display:flex;gap:8px;align-items:center;">
+          <img id="eimgp" class="img-prev"/>
+          <button type="button" id="btn-del-img" class="lnk" style="color:#e05a2b;display:none;font-size:11px;background:none;border:none;cursor:pointer;" onclick="clearImg()">Remove Image</button>
+        </div>
+      </div>
+
+      <!-- YOUTUBE FIELDS -->
+      <div id="media-field-youtube" class="fg hidden">
+        <label>YouTube Video Link</label>
+        <input type="url" id="eyoutube_url" placeholder="e.g. https://www.youtube.com/watch?v=..."/>
+      </div>
+
+      <div id="add-err" class="err" style="margin-bottom:8px;"></div>
+      <button class="btn-pri" id="save-btn" onclick="saveNewPost()">Publish Post</button>
+      <div style="height:30px;"></div>
+    </div>
+  `;
+}
+
+function renderDetails() {
+  const p = currentPost;
+  const container = document.getElementById('post-page-container');
+  
+  const formattedDate = new Date(p.created_at).toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+
+  const mediaHtml = p.media_url && p.media_type === 'youtube'
+    ? getYouTubeEmbedHtml(p.media_url)
+    : (p.media_url ? `<img class="post-img" src="${p.media_url}" alt="${p.title}"/>` : `<div style="text-align:center;padding:20px;border:1px dashed var(--bd);border-radius:var(--r);font-size:11px;color:var(--t3);">No image or video added.</div>`);
+
+  const tagsListStr = p.tags || '';
+  const tagsHtml = `
+    <div class="post-tags-container">
+      ${tagsListStr ? tagsListStr.split(',').map(t => `<span class="post-tag">#${t.trim()}</span>`).join('') : '<span style="color:var(--t3);font-size:11px;">No tags</span>'}
+      <button class="edit-inline" onclick="editPostField('tags','Tags','${tagsListStr.replace(/'/g,"\\'")}')">${editIcon}</button>
+    </div>
+  `;
+
+  container.innerHTML = `
+    <div class="post-media-wrapper">
+      ${mediaHtml}
+      <button class="post-media-edit-btn" onclick="editPostMedia()">✏ Edit Media</button>
+    </div>
+    <div class="post-body">
+      <div style="display:flex;align-items:center;gap:4px;">
+        <span class="post-title">${p.title}</span>
+        <button class="edit-inline" onclick="editPostField('title','Title','${p.title.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')">${editIcon}</button>
+      </div>
+      <div class="post-date">
+        <span>📅 Published ${formattedDate}</span>
+      </div>
+      <div style="position:relative; margin-top:14px; padding-top:6px; border-top:1px solid #f0f0f0;">
+        <div class="post-content">${p.content}</div>
+        <button class="edit-inline" style="position:absolute;top:4px;right:0;" onclick="editPostField('content','Content','${p.content.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')">${editIcon}</button>
+      </div>
+      
+      ${tagsHtml}
+
+      <div style="display:flex;gap:6px;margin-top:20px;padding-top:10px;">
+        <button class="btn-pri" onclick="editPostFull()">✏ Edit Full Post</button>
+      </div>
+      <div class="info-note" style="margin-top:10px;">Updates save instantly and appear on your public blog post.</div>
+    </div>
+  `;
+}
+
+function closeLE(e){
+  if(e && e.target !== document.getElementById('le-mo')) return;
+  document.getElementById('le-mo').classList.remove('open');
+}
+
+function saveLE(){
+  if(leSaveFunc) leSaveFunc();
+}
+
+function editPostField(field, label, currentVal) {
+  document.getElementById('le-title').textContent = 'Edit ' + label;
+  const isContent = field === 'content';
+  
+  if (isContent) {
+    document.getElementById('le-body').innerHTML = `
+      <div class="fg">
+        <label>Post Content</label>
+        <div class="editor-toolbar">
+          <button type="button" class="toolbar-btn" onclick="insertStyleLE('b')">B</button>
+          <button type="button" class="toolbar-btn" onclick="insertStyleLE('i')">I</button>
+          <button type="button" class="toolbar-btn" onclick="insertStyleLE('h2')">Header</button>
+          <button type="button" class="toolbar-btn" onclick="insertStyleLE('ul')">Bullet List</button>
+        </div>
+        <textarea id="le-inp" class="editor-textarea" rows="8" placeholder="Tell your story...">${currentVal}</textarea>
+      </div>
+    `;
+  } else {
+    document.getElementById('le-body').innerHTML = `
+      <div class="fg">
+        <label>${label}</label>
+        <input type="text" id="le-inp" value="${currentVal}" style="width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:var(--rs);font-size:12px;"/>
+      </div>
+    `;
+  }
+  
+  leSaveFunc = async () => {
+    const btn = document.getElementById('le-save-btn');
+    btn.textContent = 'Saving...'; btn.disabled = true;
+    const val = document.getElementById('le-inp').value.trim();
+    
+    if ((field === 'title' || field === 'content') && !val) {
+      toast(label + ' is required.');
+      btn.textContent = 'Save'; btn.disabled = false;
+      return;
+    }
+    
+    const pay = {[field]: val || null};
+    if (field === 'title') {
+      pay.slug = generateSlug(val);
+    }
+    
+    const {error} = await sb.from('posts').update(pay).eq('id', postId);
+    if (error) {
+      toast('Error: ' + error.message);
+      btn.textContent = 'Save'; btn.disabled = false;
+      return;
+    }
+    toast('Saved!');
+    closeLE();
+    await loadPostData();
+  };
+  document.getElementById('le-mo').classList.add('open');
+  setTimeout(() => document.getElementById('le-inp')?.focus(), 100);
+}
+
+function editPostMedia() {
+  const p = currentPost || {};
+  document.getElementById('le-title').textContent = 'Edit Media';
+  document.getElementById('le-body').innerHTML = `
+    <div class="fg">
+      <label>Media Link Type</label>
+      <select id="le-media-type" onchange="toggleMediaFieldsLE(this.value)">
+        <option value="image">Upload Image</option>
+        <option value="youtube">YouTube Video Link</option>
+      </select>
+    </div>
+    <div id="media-field-image-le" class="fg">
+      <label>Upload Image</label>
+      <input type="file" id="le-imgf" accept="image/*" onchange="prvImg(this,'le-imgp','le-imgurl')"/>
+      <div style="margin:4px 0;font-size:11px;color:var(--t3);text-align:center;">— OR —</div>
+      <input type="url" id="le-imgurl" placeholder="Paste image URL (https://...)" oninput="prvImgUrl(this.value,'le-imgp','le-imgf')"/>
+      <div style="margin-top:6px;display:flex;gap:8px;align-items:center;">
+        <img id="le-imgp" class="img-prev"/>
+        <button type="button" id="btn-del-img-modal" class="lnk" style="color:#e05a2b;display:none;font-size:11px;background:none;border:none;cursor:pointer;" onclick="clearImgModal()">Remove Image</button>
+      </div>
+    </div>
+    <div id="media-field-youtube-le" class="fg hidden">
+      <label>YouTube Video Link</label>
+      <input type="url" id="le-youtube-url" placeholder="e.g. https://www.youtube.com/watch?v=..."/>
+    </div>
+  `;
+  
+  document.getElementById('le-media-type').value = p.media_type || 'image';
+  toggleMediaFieldsLE(p.media_type || 'image');
+  
+  if (p.media_type === 'youtube') {
+    document.getElementById('le-youtube-url').value = p.media_url || '';
+  } else if (p.media_url) {
+    const pEl = document.getElementById('le-imgp');
+    pEl.src = p.media_url;
+    pEl.style.display = 'block';
+    document.getElementById('btn-del-img-modal').style.display = 'inline';
+    if (!p.media_url.startsWith('data:')) {
+      document.getElementById('le-imgurl').value = p.media_url;
+    }
+  }
+  
+  leSaveFunc = async () => {
+    const btn = document.getElementById('le-save-btn');
+    btn.textContent = 'Saving...'; btn.disabled = true;
+    const mediaType = document.getElementById('le-media-type').value;
+    let mediaUrl = null;
+    
+    if (mediaType === 'youtube') {
+      mediaUrl = document.getElementById('le-youtube-url').value.trim() || null;
+    } else {
+      const f = document.getElementById('le-imgf').files[0];
+      const url = document.getElementById('le-imgurl').value.trim();
+      if (f) {
+        mediaUrl = await compress(f, 100);
+      } else if (url) {
+        mediaUrl = url;
+      } else if (document.getElementById('le-imgp').src && document.getElementById('le-imgp').style.display !== 'none') {
+        mediaUrl = document.getElementById('le-imgp').src;
+      }
+    }
+    
+    const {error} = await sb.from('posts').update({media_type: mediaType, media_url: mediaUrl}).eq('id', postId);
+    if (error) {
+      toast('Error: ' + error.message);
+      btn.textContent = 'Save'; btn.disabled = false;
+      return;
+    }
+    toast('Media updated!');
+    closeLE();
+    await loadPostData();
+  };
+  document.getElementById('le-mo').classList.add('open');
+}
+
+function toggleMediaFieldsLE(val) {
+  if(val === 'image') {
+    document.getElementById('media-field-image-le').classList.remove('hidden');
+    document.getElementById('media-field-youtube-le').classList.add('hidden');
+  } else {
+    document.getElementById('media-field-image-le').classList.add('hidden');
+    document.getElementById('media-field-youtube-le').classList.remove('hidden');
+  }
+}
+
+function editPostFull() {
+  const p = currentPost || {};
+  document.getElementById('le-title').textContent = 'Edit Full Post';
+  document.getElementById('le-body').innerHTML = `
+    <div class="fg">
+      <label>Title *</label>
+      <input type="text" id="le-title-inp" value="${p.title.replace(/"/g,'&quot;')}"/>
+    </div>
+    <div class="fg">
+      <label>Post Content *</label>
+      <div class="editor-toolbar">
+        <button type="button" class="toolbar-btn" onclick="insertStyleLEFull('b')">B</button>
+        <button type="button" class="toolbar-btn" onclick="insertStyleLEFull('i')">I</button>
+        <button type="button" class="toolbar-btn" onclick="insertStyleLEFull('h2')">Header</button>
+        <button type="button" class="toolbar-btn" onclick="insertStyleLEFull('ul')">Bullet List</button>
+      </div>
+      <textarea id="le-content-inp" class="editor-textarea" rows="6">${p.content || ''}</textarea>
+    </div>
+    <div class="fg">
+      <label>Tags</label>
+      <input type="text" id="le-tags-inp" value="${p.tags || ''}"/>
+    </div>
+  `;
+  
+  leSaveFunc = async () => {
+    const btn = document.getElementById('le-save-btn');
+    const title = document.getElementById('le-title-inp').value.trim();
+    const content = document.getElementById('le-content-inp').value.trim();
+    if (!title || !content) {
+      toast('Title and content are required.');
+      return;
+    }
+    btn.textContent = 'Saving...'; btn.disabled = true;
+    const slug = generateSlug(title);
+    
+    const pay = {
+      title,
+      content,
+      slug,
+      tags: document.getElementById('le-tags-inp').value.trim() || null
+    };
+    
+    const {error} = await sb.from('posts').update(pay).eq('id', postId);
+    if (error) {
+      toast('Error: ' + error.message);
+      btn.textContent = 'Save'; btn.disabled = false;
+      return;
+    }
+    toast('Post updated!');
+    closeLE();
+    await loadPostData();
+  };
+  document.getElementById('le-mo').classList.add('open');
+}
+
+async function saveNewPost(){
+  const title=document.getElementById('etitle').value.trim();
+  const content=document.getElementById('econtent').value.trim();
+  const errEl=document.getElementById('add-err');
+  errEl.textContent='';
+  if(!title || !content){errEl.textContent='Title and Content are required.';return;}
+
+  const btn=document.getElementById('save-btn');
+  btn.textContent='Publishing…';btn.disabled=true;
+
+  const mediaType = document.getElementById('emedia_type').value;
+  let mediaUrl = null;
+
+  if(mediaType === 'youtube') {
+    mediaUrl = document.getElementById('eyoutube_url').value.trim() || null;
+  } else {
+    const imf=document.getElementById('eimg').files[0];
+    const urlInp=document.getElementById('eimgurl').value.trim();
+    if(imf) mediaUrl = await compress(imf,100);
+    else if(urlInp) mediaUrl = urlInp;
+  }
+
+  const slug = generateSlug(title);
+
+  const pay={
+    id: generateUUID(),
+    title,
+    content,
+    slug,
+    tags: document.getElementById('etags').value.trim() || null,
+    media_type: mediaType,
+    media_url: mediaUrl,
+    business_id: biz.id
+  };
+
+  const {error} = await sb.from('posts').insert(pay);
+  if(error){errEl.textContent=error.message;btn.textContent='Publish Post';btn.disabled=false;return;}
+  
+  toast('Post published!');
+  setTimeout(()=>goBack(),700);
+}
+
+async function deletePost(){
+  if(!confirm('Are you sure you want to delete this blog post?')) return;
+  const {error} = await sb.from('posts').delete().eq('id', postId);
+  if(error) {
+    toast('Error: ' + error.message);
+  } else {
+    toast('Post deleted!');
+    setTimeout(()=>window.location.href='profile.html',700);
+  }
+}
+
+// ===== INIT =====
+async function init(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){window.location.href='index.html';return;}
+  cu=session.user;
+  const {data:b}=await sb.from('businesses').select('*').eq('user_id',cu.id).single();
+  if(!b){toast('No business found.');setTimeout(()=>window.location.href='partner.html',1500);return;}
+  biz=b;
+  await loadPostData();
+}
+window.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
