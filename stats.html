@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Stats – MyPahad Partner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="stylesheet" href="mp.css"/>
+<style>
+body{padding-bottom:68px;}
+.top-nav{background:var(--g);display:flex;align-items:center;gap:8px;padding:7px 10px;position:sticky;top:0;z-index:200;}
+.top-nav .logo{font-size:15px;font-weight:700;color:#fff;letter-spacing:-0.3px;cursor:pointer;}
+.top-nav .loc{font-size:10px;color:rgba(255,255,255,0.6);border-left:1px solid rgba(255,255,255,0.25);padding-left:8px;}
+.top-nav-right{margin-left:auto;display:flex;align-items:center;gap:6px;}
+.nav-settings-btn{background:rgba(255,255,255,0.12);border:none;color:#fff;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;}
+.settings-dd{position:absolute;top:calc(100% + 5px);right:0;background:#fff;border:1px solid var(--bd);border-radius:var(--rs);min-width:130px;z-index:300;display:none;box-shadow:0 2px 10px rgba(0,0,0,0.12);}
+.settings-dd.open{display:block;}
+.settings-dd button{display:block;width:100%;text-align:left;padding:9px 13px;font-size:12px;background:none;border:none;color:var(--t);border-bottom:1px solid var(--bd);cursor:pointer;}
+.settings-dd button:last-child{border-bottom:none;color:#c00;}
+.dc{padding:10px;}
+
+/* MENU CARD */
+.menu-card{background:#fff;border:1px solid var(--bd);border-radius:var(--r);padding:12px;margin-bottom:8px;}
+.menu-card-title{font-size:13px;font-weight:700;color:var(--t);margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+.menu-card-sub{font-size:11px;color:var(--t3);margin-bottom:10px;line-height:1.5;}
+.menu-actions{display:flex;flex-direction:column;gap:7px;}
+.mbtn{display:flex;align-items:center;gap:9px;background:var(--gl);color:var(--g);border:1px solid #b5d9c5;border-radius:var(--rs);padding:10px 12px;font-size:12px;font-weight:600;cursor:pointer;width:100%;text-align:left;font-family:inherit;}
+.mbtn svg{flex-shrink:0;}
+.mbtn-sub{font-size:10px;font-weight:400;color:var(--t3);display:block;margin-top:1px;}
+.mbtn-ai{background:#f0f0ff;color:#4f46e5;border-color:#c7d2fe;}
+.mbtn-print{background:#fff3e0;color:#e65100;border-color:#ffcc80;}
+.mbtn-pdf{background:#e8f5ee;color:#1a5c3a;border-color:#b5d9c5;}
+
+/* MODAL */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;overflow-y:auto;padding:16px;}
+.mo.hidden{display:none;}
+.mbox{background:#fff;max-width:480px;margin:0 auto;border-radius:var(--r);padding:16px;position:relative;}
+.mtitle{font-size:14px;font-weight:700;margin-bottom:10px;padding-right:24px;}
+.mclose{position:absolute;top:10px;right:12px;background:none;border:none;font-size:20px;color:var(--t3);cursor:pointer;}
+
+/* AI PROMPT */
+.ai-prompt-box{background:#f8f8ff;border:1px solid #c7d2fe;border-radius:var(--rs);padding:12px;font-size:11px;line-height:1.7;white-space:pre-wrap;word-break:break-word;max-height:320px;overflow-y:auto;font-family:'DM Sans',sans-serif;color:#1e1b4b;}
+.copy-btn{background:#4f46e5;color:#fff;border:none;padding:7px 16px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;margin-top:8px;width:100%;}
+
+/* PRINT PREVIEW STYLES (hidden, rendered for PDF/print) */
+#print-area{display:none;}
+
+/* QR container */
+#qr-canvas-wrap{display:none;}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+
+<!-- TOP NAV -->
+<div class="top-nav">
+  <span class="logo" onclick="window.location.href='home.html'">MyPahad</span>
+  <span class="loc" id="nav-biz-name"></span>
+  <div class="top-nav-right">
+    <div style="position:relative;" id="settings-wrap">
+      <button class="nav-settings-btn" onclick="toggleSettings()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </button>
+      <div class="settings-dd" id="settings-dd">
+        <button onclick="window.location.href='home.html'">View Site</button>
+        <button onclick="viewMyProfile()">View My Profile</button>
+        <button onclick="doLogout()">Logout</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ANALYTICS -->
+<div class="dc" id="tc-analytics">
+  <div class="sgrid">
+    <div class="sbox"><div class="shim" style="height:18px;border-radius:2px;margin-bottom:3px;"></div><div class="shim" style="height:9px;width:60%;margin:0 auto;border-radius:2px;"></div></div>
+    <div class="sbox"><div class="shim" style="height:18px;border-radius:2px;margin-bottom:3px;"></div><div class="shim" style="height:9px;width:60%;margin:0 auto;border-radius:2px;"></div></div>
+    <div class="sbox"><div class="shim" style="height:18px;border-radius:2px;margin-bottom:3px;"></div><div class="shim" style="height:9px;width:60%;margin:0 auto;border-radius:2px;"></div></div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <button class="bni" onclick="window.location.href='home.html'">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Home
+  </button>
+  <button class="bni" onclick="window.location.href='search.html'">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    Search
+  </button>
+  <button class="bni-plus" onclick="window.location.href='add.html'">
+    <div class="plus-circle"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+    <span style="font-size:8px;color:var(--t3);">Add Item</span>
+  </button>
+  <button class="bni on">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Stats
+  </button>
+  <button class="bni" onclick="window.location.href='profileEdit.html'">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    Profile
+  </button>
+</div>
+
+<!-- AI PROMPT MODAL -->
+<div class="mo hidden" id="ai-mo">
+  <div class="mbox">
+    <div class="mtitle">🤖 AI Menu Prompt</div>
+    <button class="mclose" onclick="document.getElementById('ai-mo').classList.add('hidden')">×</button>
+    <p style="font-size:11px;color:var(--t3);margin-bottom:8px;line-height:1.6;">Copy this prompt and paste it into <strong>Gemini, DALL·E, Midjourney, Ideogram</strong> or any image generation AI to create a beautiful menu/catalogue image for your business.</p>
+    <div class="ai-prompt-box" id="ai-prompt-text"></div>
+    <button class="copy-btn" onclick="copyAIPrompt()">📋 Copy Prompt</button>
+    <div style="margin-top:10px;background:#fffbeb;border:1px solid #fcd34d;border-radius:var(--rs);padding:9px 10px;font-size:10px;color:#92400e;line-height:1.6;">
+      <strong>Tip:</strong> Paste this on <strong>gemini.google.com</strong> (use Imagen 3) or <strong>ideogram.ai</strong> for best results. For restaurants, try specifying your cuisine style in the prompt too!
+    </div>
+  </div>
+</div>
+
+<!-- PRINT PREVIEW MODAL -->
+<div class="mo hidden" id="print-mo">
+  <div class="mbox" style="max-width:500px;">
+    <div class="mtitle">🖨 Menu / Price List</div>
+    <button class="mclose" onclick="document.getElementById('print-mo').classList.add('hidden')">×</button>
+    <p style="font-size:11px;color:var(--t3);margin-bottom:10px;">Preview your printable menu. Save as PDF or print directly.</p>
+    <div id="menu-preview-wrap" style="border:1px solid var(--bd);border-radius:var(--rs);overflow:hidden;"></div>
+    <div style="display:flex;gap:7px;margin-top:10px;">
+      <button class="btn-pri" onclick="downloadMenuPDF()" style="flex:1;">⬇ Download PDF</button>
+      <button class="btn-sec" onclick="printMenu()" style="flex:1;">🖨 Print</button>
+    </div>
+    <p class="img-disclaimer" style="margin-top:6px;">Prices and items reflect your current MyPahad listing</p>
+  </div>
+</div>
+
+<!-- Hidden QR div -->
+<div id="qr-canvas-wrap"></div>
+
+<script>
+const SU='https://khbotkadtbkwqxjxlyhm.supabase.co';
+const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoYm90a2FkdGJrd3F4anhseWhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NTU4OTAsImV4cCI6MjA4ODUzMTg5MH0.MnNTuoONyBTGZeO1qYyRUTtkRdFreK0OrOcYk66pWxs';
+const {createClient}=supabase;const sb=createClient(SU,SK);
+let cu=null,biz=null,chartObj=null,allListings=[];
+
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',2200);}
+function toggleSettings(){document.getElementById('settings-dd').classList.toggle('open');}
+document.addEventListener('click',e=>{if(!e.target.closest('#settings-wrap'))document.getElementById('settings-dd')?.classList.remove('open');});
+async function doLogout(){await sb.auth.signOut();window.location.href='partner.html';}
+function viewMyProfile(){if(biz)window.location.href=`profile.html?bizId=${biz.id}`;}
+
+async function renderAnalytics(){
+  const c=document.getElementById('tc-analytics');
+  c.innerHTML=`<div class="sgrid"><div class="sbox"><div class="shim" style="height:18px;border-radius:2px;margin-bottom:3px;"></div><div class="shim" style="height:9px;width:60%;margin:0 auto;border-radius:2px;"></div></div><div class="sbox"><div class="shim" style="height:18px;border-radius:2px;margin-bottom:3px;"></div><div class="shim" style="height:9px;width:60%;margin:0 auto;border-radius:2px;"></div></div><div class="sbox"><div class="shim" style="height:18px;border-radius:2px;margin-bottom:3px;"></div><div class="shim" style="height:9px;width:60%;margin:0 auto;border-radius:2px;"></div></div></div>`;
+  const since=new Date(Date.now()-30*864e5).toISOString();
+  const {data:ev}=await sb.from('analytics').select('event_type,created_at').eq('business_id',biz.id).gte('created_at',since).order('created_at');
+  // Fetch ALL listings (no is_active filter) so menu/PDF includes everything
+  const {data:listings}=await sb.from('listings').select('*').eq('business_id',biz.id).order('sort_order').order('created_at',{ascending:false});
+  allListings=listings||[];
+
+  const views=(ev||[]).filter(e=>e.event_type==='business_view').length;
+  const clicks=(ev||[]).filter(e=>e.event_type==='whatsapp_click').length;
+  const lstClicks=(ev||[]).filter(e=>e.event_type==='listing_click').length;
+  const days={};for(let i=29;i>=0;i--){const d=new Date(Date.now()-i*864e5);days[d.toISOString().slice(0,10)]=0;}
+  (ev||[]).filter(e=>e.event_type==='business_view').forEach(e=>{const d=e.created_at.slice(0,10);if(days[d]!==undefined)days[d]++;});
+  const labels=Object.keys(days).map(d=>d.slice(5));const vals=Object.values(days);
+  const approvedBadge=biz.is_approved
+    ?`<span class="badge bg" style="display:inline-flex;align-items:center;gap:3px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Approved</span>`
+    :`<span class="badge by">Pending Approval</span>`;
+
+  const profileUrl=biz.username?`https://mypahad.in/profile.html?u=${biz.username}`:`https://mypahad.in/profile.html?bizId=${biz.id}`;
+
+  c.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;">
+      <div style="font-size:11px;font-weight:600;color:var(--t2);">Last 30 days</div>
+      ${approvedBadge}
+    </div>
+    <div class="sgrid">
+      <div class="sbox"><div class="snum">${views}</div><div class="slbl">Profile Views</div></div>
+      <div class="sbox"><div class="snum">${lstClicks}</div><div class="slbl">Item Views</div></div>
+      <div class="sbox"><div class="snum">${clicks}</div><div class="slbl">WA Contacts</div></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Profile views – last 30 days</div>
+      <canvas id="vchart" class="chart-canvas"></canvas>
+    </div>
+
+    <!-- MENU / MARKETING CARD -->
+    <div class="menu-card">
+      <div class="menu-card-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g)" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Menu / Price List
+      </div>
+      <div class="menu-card-sub">Create a beautiful menu or price list for your business — print it, share it on WhatsApp, or use it for marketing.</div>
+      <div class="menu-actions">
+        <button class="mbtn mbtn-pdf" onclick="openMenuPreview()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <div>
+            Print / Save as PDF
+            <span class="mbtn-sub">Beautiful formatted menu with your QR code — ready to print or share</span>
+          </div>
+        </button>
+        <button class="mbtn mbtn-ai" onclick="openAIPrompt()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2z"/><path d="M12 8v4l3 3"/></svg>
+          <div>
+            Make with AI ✨
+            <span class="mbtn-sub">Get an AI image prompt to create a stunning visual menu on Gemini or Ideogram</span>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ctitle">Advertise on MyPahad</div>
+      <p style="font-size:11px;color:var(--t2);margin-bottom:7px;">Get featured at the top of your area — banner &amp; sponsored listings.</p>
+      <a href="https://wa.me/917876602575?text=Hi, I want to advertise: ${encodeURIComponent(biz?.business_name||'')}" target="_blank" style="display:inline-block;background:var(--gl);color:var(--g);padding:7px 14px;border-radius:var(--rs);font-size:11px;font-weight:600;">Contact us for Ads →</a>
+    </div>
+  `;
+
+  if(chartObj)chartObj.destroy();
+  const ctx=document.getElementById('vchart').getContext('2d');
+  chartObj=new Chart(ctx,{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:'#1a5c3a',borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:8},maxTicksLimit:10},grid:{display:false}},y:{ticks:{font:{size:9},stepSize:1},grid:{color:'#f0f0f0'}}}}});
+}
+
+// ===== MENU PREVIEW =====
+function getProfileUrl(){
+  return biz.username?`https://mypahad.in/u/${biz.username}`:`https://mypahad.in/profile.html?bizId=${biz.id}`;
+}
+
+function buildMenuHTML(forPDF=false){
+  const items=allListings;
+  const profileUrl=getProfileUrl();
+  const now=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+
+  // Group items by category name (use listing_type as fallback)
+  const groups={};
+  items.forEach(l=>{
+    const grp=l.listing_type||'Products';
+    if(!groups[grp])groups[grp]=[];
+    groups[grp].push(l);
+  });
+
+  const groupsHTML=Object.entries(groups).map(([grp,lst])=>`
+    <div style="margin-bottom:18px;">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#1a5c3a;border-bottom:2px solid #1a5c3a;padding-bottom:3px;margin-bottom:8px;">${grp}</div>
+      <table style="width:100%;border-collapse:collapse;">
+        ${lst.map(l=>{
+          const hasDisc=l.discount_price&&l.price;
+          const priceCell=hasDisc
+            ?`<td style="text-align:right;white-space:nowrap;padding:5px 0;"><span style="color:#e05a2b;font-weight:700;font-size:13px;">${l.discount_price}</span> <span style="text-decoration:line-through;color:#aaa;font-size:10px;">${l.price}</span></td>`
+            :`<td style="text-align:right;white-space:nowrap;padding:5px 0;"><span style="color:#1a5c3a;font-weight:700;font-size:13px;">${l.price||'—'}</span></td>`;
+          const variantsText=(l.variants&&l.variants.length)
+            ?`<div style="font-size:9px;color:#888;margin-top:1px;">${l.variants.map(v=>{const vn=typeof v==='string'?v:(v.name+(v.price?` ₹${v.discount_price||v.price}`:''));return vn;}).join(' · ')}</div>`
+            :'';
+          return `<tr style="border-bottom:1px dashed #e8e8e8;">
+            <td style="padding:5px 0;padding-right:10px;">
+              <div style="font-size:12px;font-weight:500;color:#111;">${l.name}</div>
+              ${variantsText}
+              ${l.description?`<div style="font-size:10px;color:#888;margin-top:1px;">${l.description.slice(0,60)}${l.description.length>60?'…':''}</div>`:''}
+            </td>
+            ${priceCell}
+          </tr>`;
+        }).join('')}
+      </table>
+    </div>`).join('');
+
+  return `
+  <div id="menu-doc" style="font-family:'DM Sans',sans-serif;background:#fff;padding:20px;max-width:480px;margin:0 auto;color:#111;">
+    <!-- HEADER -->
+    <div style="text-align:center;margin-bottom:18px;padding-bottom:14px;border-bottom:3px solid #1a5c3a;">
+      <div style="font-size:22px;font-weight:700;color:#1a5c3a;letter-spacing:-0.5px;">${biz.business_name}</div>
+      ${biz.address?`<div style="font-size:10px;color:#888;margin-top:3px;">📍 ${biz.address}</div>`:''}
+      ${biz.whatsapp?`<div style="font-size:10px;color:#888;margin-top:2px;">📱 ${biz.whatsapp}</div>`:''}
+    </div>
+
+    <!-- ITEMS -->
+    ${groupsHTML||'<p style="text-align:center;color:#aaa;font-size:12px;">No items yet. Add items from the dashboard.</p>'}
+
+    <!-- FOOTER with QR -->
+    <div style="margin-top:20px;padding-top:14px;border-top:2px solid #e8f5ee;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div style="flex:1;">
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#1a5c3a;margin-bottom:3px;">Scan to view full catalogue</div>
+        <div style="font-size:10px;color:#555;line-height:1.5;">Find all products, photos, and contact details online at <strong style="color:#1a5c3a;">mypahad.in</strong></div>
+        <div style="font-size:9px;color:#aaa;margin-top:4px;">${profileUrl}</div>
+      </div>
+      <div id="qr-slot" style="flex-shrink:0;width:70px;height:70px;background:#f5f5f5;border-radius:4px;display:flex;align-items:center;justify-content:center;">
+        <img id="qr-img" style="width:70px;height:70px;" src="" alt="QR"/>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:10px;font-size:8.5px;color:#bbb;font-style:italic;">Prices subject to change · Updated ${now}</div>
+  </div>`;
+}
+
+let qrDataURL=null;
+
+async function generateQR(){
+  const url=getProfileUrl();
+  return new Promise(resolve=>{
+    const wrap=document.getElementById('qr-canvas-wrap');
+    wrap.innerHTML='';
+    try{
+      const qr=new QRCode(wrap,{text:url,width:128,height:128,colorDark:'#1a5c3a',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+      setTimeout(()=>{
+        const img=wrap.querySelector('img')||wrap.querySelector('canvas');
+        if(img){
+          if(img.tagName==='IMG')resolve(img.src);
+          else resolve(img.toDataURL());
+        }else resolve(null);
+      },300);
+    }catch(e){resolve(null);}
+  });
+}
+
+async function openMenuPreview(){
+  if(allListings.length===0){toast('Add some items first!');return;}
+  toast('Building menu…');
+  qrDataURL=await generateQR();
+  const wrap=document.getElementById('menu-preview-wrap');
+  wrap.innerHTML=buildMenuHTML();
+  if(qrDataURL){
+    const qimg=document.getElementById('qr-img');
+    if(qimg){qimg.src=qrDataURL;qimg.style.display='block';}
+  }
+  document.getElementById('print-mo').classList.remove('hidden');
+}
+
+function printMenu(){
+  const content=document.getElementById('menu-preview-wrap').innerHTML;
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/><style>body{margin:0;padding:16px;font-family:'DM Sans',sans-serif;}@media print{body{padding:0;}}</style></head><body>${content}</body></html>`);
+  win.document.close();
+  setTimeout(()=>{win.focus();win.print();},600);
+}
+
+async function downloadMenuPDF(){
+  const {jsPDF}=window.jspdf;
+  if(!jsPDF){toast('PDF library loading…');return;}
+  toast('Generating PDF…');
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const pageW=doc.internal.pageSize.getWidth();
+  const pageH=doc.internal.pageSize.getHeight();
+  const margin=14;
+  const contentW=pageW-margin*2;
+  let y=margin;
+
+  // --- Header ---
+  doc.setFillColor(26,92,58);
+  doc.roundedRect(margin,y,contentW,24,3,3,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(16);doc.setFont('helvetica','bold');
+  doc.text(biz.business_name,pageW/2,y+10,{align:'center'});
+  doc.setFontSize(8);doc.setFont('helvetica','normal');
+  const subInfo=[biz.address,biz.whatsapp?`WA: ${biz.whatsapp}`:null].filter(Boolean).join('  ·  ');
+  if(subInfo)doc.text(subInfo,pageW/2,y+17,{align:'center'});
+  y+=30;
+
+  // --- Items ---
+  const groups={};
+  allListings.forEach(l=>{const grp=l.listing_type||'Items';if(!groups[grp])groups[grp]=[];groups[grp].push(l);});
+
+  Object.entries(groups).forEach(([grp,items])=>{
+    // Section header
+    doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(26,92,58);
+    doc.text(grp.toUpperCase(),margin,y);
+    doc.setDrawColor(26,92,58);doc.setLineWidth(0.4);
+    doc.line(margin,y+1.5,margin+contentW,y+1.5);
+    y+=6;
+
+    items.forEach(l=>{
+      if(y>pageH-25){doc.addPage();y=margin;}
+      doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);
+      const nameLines=doc.splitTextToSize(l.name,contentW-35);
+      doc.text(nameLines,margin,y);
+
+      // Price right-aligned
+      const price=l.discount_price||l.price||'';
+      if(price){
+        doc.setFont('helvetica','bold');doc.setTextColor(26,92,58);
+        doc.text(price,margin+contentW,y,{align:'right'});
+        if(l.discount_price&&l.price){
+          doc.setFont('helvetica','normal');doc.setTextColor(180,180,180);doc.setFontSize(7);
+          doc.text(l.price,margin+contentW-16,y,{align:'right'});
+        }
+      }
+      y+=nameLines.length*4.5;
+
+      // Description
+      if(l.description){
+        doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.setTextColor(130,130,130);
+        const descLines=doc.splitTextToSize(l.description.slice(0,80),contentW-4);
+        doc.text(descLines,margin+2,y);
+        y+=descLines.length*3.5;
+      }
+
+      // Divider
+      doc.setDrawColor(230,230,230);doc.setLineWidth(0.2);
+      doc.line(margin,y+0.5,margin+contentW,y+0.5);
+      y+=4;
+    });
+    y+=4;
+  });
+
+  // --- Footer with QR ---
+  const footerY=pageH-28;
+  doc.setFillColor(232,245,238);
+  doc.rect(margin,footerY,contentW,22,'F');
+
+  // QR image
+  if(qrDataURL){
+    try{doc.addImage(qrDataURL,'PNG',margin+2,footerY+2,18,18);}catch(e){}
+  }
+
+  doc.setFontSize(7.5);doc.setFont('helvetica','bold');doc.setTextColor(26,92,58);
+  doc.text('Scan to view full catalogue online',margin+22,footerY+7);
+  doc.setFont('helvetica','normal');doc.setTextColor(80,80,80);
+  doc.text('Find all products, photos & contact info at mypahad.in',margin+22,footerY+12);
+  const profileUrl=getProfileUrl();
+  doc.setFontSize(6.5);doc.setTextColor(150,150,150);
+  doc.text(profileUrl,margin+22,footerY+17);
+
+  const now=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  doc.setFontSize(6);doc.setTextColor(180,180,180);
+  doc.text(`Prices subject to change · ${now}`,pageW/2,pageH-4,{align:'center'});
+
+  doc.save(`${biz.business_name.replace(/\s+/g,'-')}-menu.pdf`);
+  toast('PDF downloaded!');
+}
+
+// ===== AI PROMPT =====
+function openAIPrompt(){
+  if(allListings.length===0){toast('Add some items first!');return;}
+  const profileUrl=getProfileUrl();
+  const isRestaurant=biz.type==='food'||(biz.business_name||'').toLowerCase().includes('restaurant')||(biz.business_name||'').toLowerCase().includes('dhaba')||(biz.business_name||'').toLowerCase().includes('cafe')||(biz.business_name||'').toLowerCase().includes('hotel');
+
+  const itemLines=allListings.map(l=>{
+    let line=`• ${l.name}`;
+    if(l.discount_price)line+=` – ${l.discount_price} (was ${l.price})`;
+    else if(l.price)line+=` – ${l.price}`;
+    if(l.description)line+=`\n  ${l.description.slice(0,60)}`;
+    if(l.variants&&l.variants.length){
+      const vStr=l.variants.map(v=>typeof v==='string'?v:(v.name+(v.price?` ₹${v.discount_price||v.price}`:''))).join(', ');
+      line+=`\n  Variants: ${vStr}`;
+    }
+    return line;
+  }).join('\n');
+
+  const menuType=isRestaurant?'menu card / food poster':'product catalogue / price list poster';
+  const styleHints=isRestaurant
+    ?'warm earthy tones, food photography mood, handwritten-style font accents, rustic mountain aesthetic'
+    :'clean modern layout, forest green and cream color palette, premium product catalogue style, elegant typography';
+
+  const prompt=`Create a beautiful ${menuType} image for a business called "${biz.business_name}" located in Himachal Pradesh, India (a mountain region known for natural, artisanal products).
+
+Business Info:
+• Name: ${biz.business_name}
+${biz.address?`• Location: ${biz.address}`:'• Located in the mountains of Himachal Pradesh'}
+${biz.description?`• About: ${biz.description}`:''}
+
+Items / ${isRestaurant?'Menu':'Price List'}:
+${itemLines}
+
+Design Instructions:
+— Style: ${styleHints}
+— Layout: Elegant, easy to read, well-organized with clear sections
+— Include the business name prominently at the top as the main heading
+— List all items clearly with their prices in a beautiful, readable format
+— At the bottom, add a subtle footer that says "Find us on myPahad.in" in a soft, tasteful way (like a small badge, stamp, or elegant tagline — NOT a banner or URL bar)
+— Try to create images of some items mentioned in it.
+— Make the name of the business beautifuly writen.
+— For overall look use the design used by other businesses in the market.
+— The overall feel should be premium and trustworthy — something a local business would be proud to display or print
+— Format: Tall portrait format (like A4 or Instagram story), high resolution, print-ready
+
+Make it look professional enough to print and display in the shop, and beautiful enough to share on WhatsApp and Instagram.`;
+
+  document.getElementById('ai-prompt-text').textContent=prompt;
+  document.getElementById('ai-mo').classList.remove('hidden');
+}
+
+function copyAIPrompt(){
+  const text=document.getElementById('ai-prompt-text').textContent;
+  navigator.clipboard.writeText(text).then(()=>toast('Prompt copied! Paste on Gemini or Ideogram')).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('Copied!');
+  });
+}
+
+// ===== INIT =====
+async function init(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){window.location.href='partner.html';return;}
+  cu=session.user;
+  const {data:b}=await sb.from('businesses').select('*').eq('user_id',cu.id).single();
+  if(!b){toast('No business found.');return;}
+  biz=b;
+  document.getElementById('nav-biz-name').textContent=b.business_name;
+  renderAnalytics();
+}
+window.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
