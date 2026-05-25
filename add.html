@@ -234,6 +234,16 @@ async function compress(file,kb=100){
 }
 
 // ===== SAVE =====
+function generateUUID() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 async function saveNewLst(){
   const name=document.getElementById('ename').value.trim();
   const errEl=document.getElementById('add-err');
@@ -253,14 +263,14 @@ async function saveNewLst(){
 
   const pay={
     business_id:biz.id,
-    id:crypto.randomUUID(),
+    id:generateUUID(),
     listing_type:document.getElementById('etype').value,
     name,price,discount_price,qty_label:qtyLabel,
     has_delivery:document.getElementById('ehas_delivery').checked,
     booking_required:document.getElementById('ebooking_required').checked,
     description:document.getElementById('edesc').value.trim()||null,
     variants:variants.length?variants:null,
-    is_active:true
+    is_available:true
   };
 
   const imf=document.getElementById('eimg').files[0];

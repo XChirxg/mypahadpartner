@@ -59,7 +59,7 @@ body{padding-bottom:68px;}
 
 <!-- TOP NAV -->
 <div class="top-nav">
-  <span class="logo" onclick="window.location.href='home.html'">MyPahad</span>
+  <span class="logo" onclick="window.location.href='https://mypahad.in'">MyPahad</span>
   <span class="loc" id="nav-biz-name"></span>
   <div class="top-nav-right">
     <div style="position:relative;" id="settings-wrap">
@@ -67,7 +67,7 @@ body{padding-bottom:68px;}
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
       </button>
       <div class="settings-dd" id="settings-dd">
-        <button onclick="window.location.href='home.html'">View Site</button>
+        <button onclick="window.location.href='https://mypahad.in'">View Site</button>
         <button onclick="viewMyProfile()">View My Profile</button>
         <button onclick="doLogout()">Logout</button>
       </div>
@@ -86,21 +86,13 @@ body{padding-bottom:68px;}
 
 <!-- BOTTOM NAV -->
 <div class="bnav">
-  <button class="bni" onclick="window.location.href='home.html'">
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    Home
-  </button>
-  <button class="bni" onclick="window.location.href='search.html'">
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    Search
+  <button class="bni on">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Stats
   </button>
   <button class="bni-plus" onclick="window.location.href='add.html'">
     <div class="plus-circle"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
     <span style="font-size:8px;color:var(--t3);">Add Item</span>
-  </button>
-  <button class="bni on">
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-    Stats
   </button>
   <button class="bni" onclick="window.location.href='profileEdit.html'">
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
@@ -150,7 +142,13 @@ function toast(m){const t=document.getElementById('toast');t.textContent=m;t.sty
 function toggleSettings(){document.getElementById('settings-dd').classList.toggle('open');}
 document.addEventListener('click',e=>{if(!e.target.closest('#settings-wrap'))document.getElementById('settings-dd')?.classList.remove('open');});
 async function doLogout(){await sb.auth.signOut();window.location.href='partner.html';}
-function viewMyProfile(){if(biz)window.location.href=`profile.html?bizId=${biz.id}`;}
+function viewMyProfile(){
+  if(biz) {
+    const areaSlug = biz.areas?.slug || 'town';
+    const username = biz.username || 'shop';
+    window.location.href = `https://mypahad.in/${username}-in-${areaSlug}`;
+  }
+}
 
 async function renderAnalytics(){
   const c=document.getElementById('tc-analytics');
@@ -171,7 +169,8 @@ async function renderAnalytics(){
     ?`<span class="badge bg" style="display:inline-flex;align-items:center;gap:3px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Approved</span>`
     :`<span class="badge by">Pending Approval</span>`;
 
-  const profileUrl=biz.username?`https://mypahad.in/profile.html?u=${biz.username}`:`https://mypahad.in/profile.html?bizId=${biz.id}`;
+  const areaSlug=biz.areas?.slug||'town',username=biz.username||'shop';
+  const profileUrl=`https://mypahad.in/${username}-in-${areaSlug}`;
 
   c.innerHTML=`
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;">
@@ -227,7 +226,9 @@ async function renderAnalytics(){
 
 // ===== MENU PREVIEW =====
 function getProfileUrl(){
-  return biz.username?`https://mypahad.in/u/${biz.username}`:`https://mypahad.in/profile.html?bizId=${biz.id}`;
+  const areaSlug = biz.areas?.slug || 'town';
+  const username = biz.username || 'shop';
+  return `https://mypahad.in/${username}-in-${areaSlug}`;
 }
 
 function buildMenuHTML(forPDF=false){
@@ -492,7 +493,7 @@ async function init(){
   const {data:{session}}=await sb.auth.getSession();
   if(!session){window.location.href='partner.html';return;}
   cu=session.user;
-  const {data:b}=await sb.from('businesses').select('*').eq('user_id',cu.id).single();
+  const {data:b}=await sb.from('businesses').select('*, areas(slug)').eq('user_id',cu.id).single();
   if(!b){toast('No business found.');return;}
   biz=b;
   document.getElementById('nav-biz-name').textContent=b.business_name;
