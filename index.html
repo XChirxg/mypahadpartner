@@ -104,8 +104,7 @@ async function doLogin(){
   document.getElementById('lerr').textContent='';
   const {data,error}=await sb.auth.signInWithPassword({email:e,password:p});
   if(error){document.getElementById('lerr').textContent=error.message;return;}
-  // Redirect to stats (dashboard home)
-  window.location.href='stats.html';
+  window.location.href='profile.html';
 }
 
 async function doReg(){
@@ -122,7 +121,7 @@ async function doReg(){
   if(error){err.textContent=error.message;return;}
   const uid=data.user?.id;if(!uid){err.textContent='Account creation failed.';return;}
   await sb.from('businesses').insert({user_id:uid,area_id:areaId,business_name:name,username:uname||null,category_id:catId||null,type,whatsapp:wa,phone:ph||null,address:addr||null,description:desc||null,is_approved:false,is_active:true});
-  if(data.session){toast('Welcome to MyPahad!');setTimeout(()=>window.location.href='stats.html',800);}
+  if(data.session){toast('Welcome to MyPahad!');setTimeout(()=>window.location.href='profile.html',800);}
   else{toast('Check email, then login.');authTab('login');document.getElementById('le').value=email;}
 }
 
@@ -162,7 +161,7 @@ async function chkUser(v){
 async function init(){
   // Check if already logged in
   const {data:{session}}=await sb.auth.getSession();
-  if(session){window.location.href='stats.html';return;}
+  if(session){window.location.href='profile.html';return;}
   const {data:areas}=await sb.from('areas').select('*').eq('is_active',true).order('name');
   const ra=document.getElementById('rarea');
   areas?.forEach(a=>ra.appendChild(new Option(a.name,a.id)));

@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="cloudinary-utils.js"></script>
 <link rel="stylesheet" href="mp.css"/>
 <style>
 body{padding-bottom:20px; background:#f0f0ee;}
@@ -149,7 +150,7 @@ function renderDetails() {
   const container = document.getElementById('item-details-container');
   
   const imgHtml = l.image_url
-    ? `<img class="lstimg-boxed" src="${l.image_url}" alt="${l.name}"/>`
+    ? `<img class="lstimg-boxed" src="${getOptimizedImageUrl(l.image_url, 'detail')}" alt="${l.name}"/>`
     : `<div class="lstph-boxed"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--g)" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`;
   
   const orig = parseFloat(String(l.price||'').replace(/[^0-9.]/g,''))||0;
@@ -176,11 +177,11 @@ function renderDetails() {
       <div class="lstdesc">
         <span id="desc-text">${shortText}</span>
         ${hasReadMore ? `<span id="desc-more" style="display:none;">${l.description.substring(200)}</span><button class="readmore-btn" id="readmore-btn" onclick="toggleReadMore()">... Read more</button>` : ''}
-        <button class="edit-inline" onclick="editLstField('description','Description','${l.description.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')">${editIcon}</button>
+        <button class="edit-inline" onclick="editLstField('description','Description')">${editIcon}</button>
       </div>
     `;
   } else {
-    descHtml = `<button class="chip-btn" onclick="editLstField('description','Description','')">+ Add Description</button>`;
+    descHtml = `<button class="chip-btn" onclick="editLstField('description','Description')">+ Add Description</button>`;
   }
 
   const tagsListStr = l.tags || '';
@@ -190,7 +191,7 @@ function renderDetails() {
       ${l.has_delivery?`<span class="lst-tag">🚚 Delivery</span>`:''}
       ${l.booking_required?`<span class="lst-tag orange">📅 Booking</span>`:''}
       ${tagsListStr ? tagsListStr.split(',').map(t => `<span class="lst-tag" style="background:#f0f0f0;color:#555;border-color:#ccc;">#${t.trim()}</span>`).join('') : ''}
-      <button class="edit-inline" onclick="editLstField('tags','Tags / Keywords (comma separated)','${tagsListStr.replace(/'/g,"\\'")}')">${editIcon}</button>
+      <button class="edit-inline" onclick="editLstField('tags','Tags')">${editIcon}</button>
     </div>
   `;
 
@@ -226,7 +227,7 @@ function renderDetails() {
     <div class="lstbody">
       <div style="display:flex;align-items:center;gap:4px;">
         <span class="lstname">${l.name}</span>
-        <button class="edit-inline" onclick="editLstField('name','Name','${l.name.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')">${editIcon}</button>
+        <button class="edit-inline" onclick="editLstField('name','Name')">${editIcon}</button>
       </div>
       ${priceHtml}
       ${descHtml}
@@ -307,12 +308,13 @@ function saveLE(){
   if(leSaveFunc) leSaveFunc();
 }
 
-function editLstField(field, label, currentVal) {
+function editLstField(field, label) {
+  const currentVal = currentListing[field] || '';
   document.getElementById('le-title').textContent = 'Edit ' + label.split(' ')[0];
   const isLong = field === 'description';
   document.getElementById('le-body').innerHTML = isLong
     ? `<textarea id="le-inp" rows="4" style="width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:var(--rs);font-size:12px;font-family:inherit;">${currentVal}</textarea>`
-    : `<input type="text" id="le-inp" value="${currentVal}" style="width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:var(--rs);font-size:12px;"/>`;
+    : `<input type="text" id="le-inp" value="${currentVal.replace(/"/g,'&quot;')}" style="width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:var(--rs);font-size:12px;"/>`;
   
   leSaveFunc = async () => {
     const btn = document.getElementById('le-save-btn');
@@ -432,7 +434,7 @@ function editLstImg() {
       <input type="url" id="le-imgurl" placeholder="https://" value="${(l.image_url && !l.image_url.startsWith('data:')) ? l.image_url : ''}" oninput="prvImgUrl(this.value,'le-imgp','le-imgf')"/>
     </div>
     <div style="margin-top:6px;display:flex;gap:8px;align-items:center;">
-      ${l.image_url ? `<img id="le-imgp" class="img-prev" src="${l.image_url}" style="display:block;"/>` : `<img id="le-imgp" class="img-prev"/>`}
+      ${l.image_url ? `<img id="le-imgp" class="img-prev" src="${getOptimizedImageUrl(l.image_url, 'card')}" style="display:block;"/>` : `<img id="le-imgp" class="img-prev"/>`}
       <button type="button" id="btn-del-img-modal" class="lnk" style="color:#e05a2b;display:${l.image_url?'inline':'none'};font-size:11px;background:none;border:none;cursor:pointer;" onclick="clearImgModal()">Remove Image</button>
     </div>
   `;
@@ -443,12 +445,18 @@ function editLstImg() {
     const f = document.getElementById('le-imgf').files[0];
     const url = document.getElementById('le-imgurl').value.trim();
     let image_url = l.image_url;
-    if (f) {
-      image_url = await compress(f, 100);
-    } else if (url) {
-      image_url = url;
-    } else if (!document.getElementById('le-imgp').src || document.getElementById('le-imgp').style.display === 'none') {
-      image_url = null;
+    try {
+      if (f) {
+        image_url = await uploadToCloudinary(f);
+      } else if (url) {
+        image_url = await uploadToCloudinary(url).catch(() => url);
+      } else if (!document.getElementById('le-imgp').src || document.getElementById('le-imgp').style.display === 'none') {
+        image_url = null;
+      }
+    } catch(err) {
+      toast('Upload failed: '+err.message);
+      btn.textContent = 'Save'; btn.disabled = false;
+      return;
     }
     
     const {error} = await sb.from('listings').update({image_url}).eq('id', listingId);

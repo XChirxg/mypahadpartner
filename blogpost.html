@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="cloudinary-utils.js"></script>
 <link rel="stylesheet" href="mp.css"/>
 <style>
 body{padding-bottom:20px; background:#f0f0ee;}
@@ -357,13 +358,13 @@ function renderDetails() {
 
   const mediaHtml = p.media_url && p.media_type === 'youtube'
     ? getYouTubeEmbedHtml(p.media_url)
-    : (p.media_url ? `<img class="post-img" src="${p.media_url}" alt="${p.title}"/>` : `<div style="text-align:center;padding:20px;border:1px dashed var(--bd);border-radius:var(--r);font-size:11px;color:var(--t3);">No image or video added.</div>`);
+    : (p.media_url ? `<img class="post-img" src="${getOptimizedImageUrl(p.media_url, 'large')}" alt="${p.title}"/>` : `<div style="text-align:center;padding:20px;border:1px dashed var(--bd);border-radius:var(--r);font-size:11px;color:var(--t3);">No image or video added.</div>`);
 
   const tagsListStr = p.tags || '';
   const tagsHtml = `
     <div class="post-tags-container">
       ${tagsListStr ? tagsListStr.split(',').map(t => `<span class="post-tag">#${t.trim()}</span>`).join('') : '<span style="color:var(--t3);font-size:11px;">No tags</span>'}
-      <button class="edit-inline" onclick="editPostField('tags','Tags','${tagsListStr.replace(/'/g,"\\'")}')">${editIcon}</button>
+      <button class="edit-inline" onclick="editPostField('tags','Tags')">${editIcon}</button>
     </div>
   `;
 
@@ -375,14 +376,14 @@ function renderDetails() {
     <div class="post-body">
       <div style="display:flex;align-items:center;gap:4px;">
         <span class="post-title">${p.title}</span>
-        <button class="edit-inline" onclick="editPostField('title','Title','${p.title.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')">${editIcon}</button>
+        <button class="edit-inline" onclick="editPostField('title','Title')">${editIcon}</button>
       </div>
       <div class="post-date">
         <span>📅 Published ${formattedDate}</span>
       </div>
       <div style="position:relative; margin-top:14px; padding-top:6px; border-top:1px solid #f0f0f0;">
         <div class="post-content">${p.content}</div>
-        <button class="edit-inline" style="position:absolute;top:4px;right:0;" onclick="editPostField('content','Content','${p.content.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')">${editIcon}</button>
+        <button class="edit-inline" style="position:absolute;top:4px;right:0;" onclick="editPostField('content','Content')">${editIcon}</button>
       </div>
       
       ${tagsHtml}
@@ -404,7 +405,8 @@ function saveLE(){
   if(leSaveFunc) leSaveFunc();
 }
 
-function editPostField(field, label, currentVal) {
+function editPostField(field, label) {
+  const currentVal = currentPost[field] || '';
   document.getElementById('le-title').textContent = 'Edit ' + label;
   const isContent = field === 'content';
   
@@ -425,7 +427,7 @@ function editPostField(field, label, currentVal) {
     document.getElementById('le-body').innerHTML = `
       <div class="fg">
         <label>${label}</label>
-        <input type="text" id="le-inp" value="${currentVal}" style="width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:var(--rs);font-size:12px;"/>
+        <input type="text" id="le-inp" value="${currentVal.replace(/"/g,'&quot;')}" style="width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:var(--rs);font-size:12px;"/>
       </div>
     `;
   }
@@ -494,7 +496,7 @@ function editPostMedia() {
     document.getElementById('le-youtube-url').value = p.media_url || '';
   } else if (p.media_url) {
     const pEl = document.getElementById('le-imgp');
-    pEl.src = p.media_url;
+    pEl.src = getOptimizedImageUrl(p.media_url, 'large');
     pEl.style.display = 'block';
     document.getElementById('btn-del-img-modal').style.display = 'inline';
     if (!p.media_url.startsWith('data:')) {
@@ -513,12 +515,18 @@ function editPostMedia() {
     } else {
       const f = document.getElementById('le-imgf').files[0];
       const url = document.getElementById('le-imgurl').value.trim();
-      if (f) {
-        mediaUrl = await compress(f, 100);
-      } else if (url) {
-        mediaUrl = url;
-      } else if (document.getElementById('le-imgp').src && document.getElementById('le-imgp').style.display !== 'none') {
-        mediaUrl = document.getElementById('le-imgp').src;
+      try {
+        if (f) {
+          mediaUrl = await uploadToCloudinary(f);
+        } else if (url) {
+          mediaUrl = await uploadToCloudinary(url).catch(() => url);
+        } else if (document.getElementById('le-imgp').src && document.getElementById('le-imgp').style.display !== 'none') {
+          mediaUrl = document.getElementById('le-imgp').src;
+        }
+      } catch(err) {
+        toast('Upload failed: '+err.message);
+        btn.textContent = 'Save'; btn.disabled = false;
+        return;
       }
     }
     
@@ -618,8 +626,14 @@ async function saveNewPost(){
   } else {
     const imf=document.getElementById('eimg').files[0];
     const urlInp=document.getElementById('eimgurl').value.trim();
-    if(imf) mediaUrl = await compress(imf,100);
-    else if(urlInp) mediaUrl = urlInp;
+    try {
+      if(imf) mediaUrl = await uploadToCloudinary(imf);
+      else if(urlInp) mediaUrl = await uploadToCloudinary(urlInp).catch(() => urlInp);
+    } catch(err) {
+      errEl.textContent='Media upload failed: '+err.message;
+      btn.textContent='Publish Post';btn.disabled=false;
+      return;
+    }
   }
 
   const slug = generateSlug(title);

@@ -63,8 +63,10 @@ body{padding-bottom:68px;}
 .add-sheet-opt{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--bd);border-radius:var(--rs);background:#fff;cursor:pointer;width:100%;font-family:inherit;font-size:12px;font-weight:600;color:var(--t2);box-sizing:border-box;text-align:left;}
 .add-sheet-opt:active{background:var(--gl);color:var(--g);border-color:var(--g);}
 .add-sheet-opt svg{color:var(--g);flex-shrink:0;}
-.add-sheet-cancel{margin-top:10px;background:#f5f5f5;border:none;border-radius:var(--rs);padding:10px;font-size:12px;font-weight:600;color:var(--t2);width:100%;cursor:pointer;font-family:inherit;text-align:center;}
-.add-sheet-cancel:active{background:#eee;}
+.desktop-nav-link{display:none;color:rgba(255,255,255,0.85);text-decoration:none;font-size:12px;font-weight:600;padding:6px 10px;border-radius:var(--rs);margin-right:8px;}
+.desktop-nav-link:hover{background:rgba(255,255,255,0.15);color:#fff;}
+.desktop-nav-link.active{background:rgba(255,255,255,0.22);color:#fff;}
+@media(min-width:768px){.desktop-nav-link{display:inline-block;}}
 </style>
 </head>
 <body>
@@ -75,6 +77,9 @@ body{padding-bottom:68px;}
   <span class="logo" onclick="window.location.href='https://mypahad.in'">MyPahad</span>
   <span class="loc" id="nav-biz-name"></span>
   <div class="top-nav-right">
+    <a href="stats.html" class="desktop-nav-link active">Stats</a>
+    <a href="profile.html" class="desktop-nav-link">Profile</a>
+    <button class="desktop-nav-link" onclick="openAddSheet()" style="background:rgba(255,255,255,0.15);border:none;cursor:pointer;font-family:inherit;margin-right:12px;">+ Add New</button>
     <div style="position:relative;" id="settings-wrap">
       <button class="nav-settings-btn" onclick="toggleSettings()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
