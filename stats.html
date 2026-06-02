@@ -87,6 +87,7 @@ body{padding-bottom:68px;}
       <div class="settings-dd" id="settings-dd">
         <button onclick="window.location.href='https://mypahad.in'">View Site</button>
         <button onclick="viewMyProfile()">View My Profile</button>
+        <button onclick="openDeleteModal()" style="color:#c00;">Delete Account</button>
         <button onclick="doLogout()">Logout</button>
       </div>
     </div>
@@ -168,6 +169,25 @@ body{padding-bottom:68px;}
   </div>
 </div>
 
+<!-- DELETE ACCOUNT MODAL -->
+<div class="mo hidden" id="delete-mo" style="display:flex; align-items:center; justify-content:center; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; padding:16px;">
+  <div class="mbox" style="width:100%; max-width:400px; padding:24px; border-radius:12px; background:white; position:relative; box-shadow:var(--shadow-lg);">
+    <h3 style="font-size:16px; font-weight:700; color:#ef4444; margin-bottom:8px;">⚠️ Delete Account Permanent?</h3>
+    <p style="font-size:12px; color:var(--t2); line-height:1.5; margin-bottom:16px;">
+      This action is permanent and cannot be undone. All your business listings, profile settings, views, and data will be permanently deleted from MyPahad.
+    </p>
+    <div style="background:#fff7ed; border:1px solid #ffedd5; padding:12px; border-radius:8px; margin-bottom:16px;">
+      <p style="font-size:11px; color:#c2410c; font-weight:600; line-height:1.4;" id="deleteTimerText">
+        Please wait 60 seconds to confirm...
+      </p>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn-pri" id="cancelDeleteBtn" onclick="closeDeleteModal()" style="margin-top:0; background:#eee; color:#333; flex:1;">Cancel</button>
+      <button class="btn-pri" id="confirmDeleteBtn" onclick="executeAccountDeletion()" disabled style="margin-top:0; background:#ef4444; flex:1; opacity:0.5; cursor:not-allowed;">Confirm (60s)</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const SU='https://khbotkadtbkwqxjxlyhm.supabase.co';
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoYm90a2FkdGJrd3F4anhseWhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NTU4OTAsImV4cCI6MjA4ODUzMTg5MH0.MnNTuoONyBTGZeO1qYyRUTtkRdFreK0OrOcYk66pWxs';
@@ -178,6 +198,72 @@ function toast(m){const t=document.getElementById('toast');t.textContent=m;t.sty
 function toggleSettings(){document.getElementById('settings-dd').classList.toggle('open');}
 document.addEventListener('click',e=>{if(!e.target.closest('#settings-wrap'))document.getElementById('settings-dd')?.classList.remove('open');});
 async function doLogout(){await sb.auth.signOut();window.location.href='index.html';}
+
+let deleteTimer = null;
+let deleteSecondsRemaining = 60;
+
+function openDeleteModal() {
+  document.getElementById('delete-mo').classList.remove('hidden');
+  document.getElementById('confirmDeleteBtn').disabled = true;
+  document.getElementById('confirmDeleteBtn').style.opacity = '0.5';
+  document.getElementById('confirmDeleteBtn').style.cursor = 'not-allowed';
+  document.getElementById('confirmDeleteBtn').textContent = 'Confirm (60s)';
+  
+  deleteSecondsRemaining = 60;
+  clearInterval(deleteTimer);
+  
+  deleteTimer = setInterval(() => {
+    deleteSecondsRemaining--;
+    if (deleteSecondsRemaining > 0) {
+      document.getElementById('deleteTimerText').textContent = `Please wait ${deleteSecondsRemaining} seconds to confirm...`;
+      document.getElementById('confirmDeleteBtn').textContent = `Confirm (${deleteSecondsRemaining}s)`;
+    } else {
+      clearInterval(deleteTimer);
+      document.getElementById('deleteTimerText').textContent = 'Verification complete. You can now delete your account permanently.';
+      document.getElementById('deleteTimerText').style.color = '#ef4444';
+      
+      const confirmBtn = document.getElementById('confirmDeleteBtn');
+      confirmBtn.disabled = false;
+      confirmBtn.style.opacity = '1';
+      confirmBtn.style.cursor = 'pointer';
+      confirmBtn.textContent = 'Confirm Delete (Permanent)';
+    }
+  }, 1000);
+}
+
+function closeDeleteModal() {
+  clearInterval(deleteTimer);
+  document.getElementById('delete-mo').classList.add('hidden');
+}
+
+async function executeAccountDeletion() {
+  if (!biz) return;
+  
+  try {
+    toast('Deleting account data...');
+    
+    // Delete all linked child data to avoid constraint violations
+    await sb.from('analytics').delete().eq('business_id', biz.id);
+    await sb.from('hearts').delete().eq('business_id', biz.id);
+    await sb.from('ads').delete().eq('business_id', biz.id);
+    await sb.from('business_photos').delete().eq('business_id', biz.id);
+    await sb.from('listings').delete().eq('business_id', biz.id);
+    await sb.from('posts').delete().eq('business_id', biz.id);
+    
+    // Delete profile row from businesses table
+    const { error } = await sb.from('businesses').delete().eq('user_id', cu.id);
+    if (error) {
+      toast('Error deleting profile: ' + error.message);
+      return;
+    }
+
+    toast('Account profile deleted successfully.');
+    closeDeleteModal();
+    await doLogout();
+  } catch(e) {
+    toast('Deletion failed: ' + e.message);
+  }
+}
 
 function openAddSheet() {
   document.getElementById('add-sheet-overlay').classList.add('open');
