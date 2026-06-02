@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Add Item – MyPahad Partner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="cloudinary-utils.js"></script>
+<link rel="stylesheet" href="mp.css"/>
+<style>
+body{padding-bottom:0;}
+.back-bar{background:var(--g);display:flex;align-items:center;gap:8px;padding:7px 10px;position:sticky;top:0;z-index:200;}
+.back-bar-btn{background:rgba(255,255,255,0.15);border:none;color:#fff;padding:5px 9px;border-radius:var(--rs);font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit;}
+.back-bar-title{flex:1;font-size:14px;font-weight:700;color:#fff;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.add-body{padding:12px;max-width:500px;margin:0 auto;}
+.info-note{background:var(--gl);border-radius:var(--rs);padding:7px 10px;font-size:10px;color:var(--g);margin-bottom:12px;line-height:1.5;}
+.price-row{display:flex;align-items:center;border:1px solid var(--bd);border-radius:var(--rs);padding:0 8px;background:#fff;}
+.price-row span{font-size:12px;font-weight:600;color:var(--t2);margin-right:4px;}
+.price-row input{border:none;padding:7px 0;flex:1;outline:none;font-size:12px;}
+.var-row{display:flex;gap:5px;align-items:center;margin-bottom:5px;}
+.var-row input{flex:1;font-size:11px;padding:5px 7px;}
+.var-del{background:none;border:none;color:#c00;font-size:15px;padding:0 3px;flex-shrink:0;cursor:pointer;}
+.img-prev{width:80px;height:60px;border-radius:var(--rs);object-fit:cover;display:none;margin-top:6px;border:1px solid var(--bd);}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+input[type=number]{-moz-appearance:textfield;}
+.cac-wrap{position:relative;}
+.cac-drop{position:absolute;top:calc(100% + 2px);left:0;right:0;background:#fff;border:1px solid var(--g);border-radius:var(--rs);z-index:300;max-height:170px;overflow-y:auto;display:none;box-shadow:0 4px 10px rgba(0,0,0,0.1);}
+.cac-drop.open{display:block;}
+.cac-item{padding:7px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid #f0f0f0;}
+.cac-item:last-child{border-bottom:none;}
+.cac-item:hover{background:var(--gl);}
+.cac-item-new::after{content:'+ Create';font-size:10px;background:var(--gl);color:var(--g);padding:1px 5px;border-radius:2px;margin-left:6px;}
+.cac-pill{display:inline-flex;align-items:center;gap:4px;background:var(--gl);color:var(--g);border:1px solid #b5d9c5;border-radius:var(--rs);padding:2px 7px 2px 8px;font-size:11px;font-weight:600;margin-top:4px;}
+.cac-pill button{background:none;border:none;color:var(--g);font-size:13px;line-height:1;padding:0;cursor:pointer;}
+</style>
+</head>
+<body>
+<div id="toast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:7px 16px;border-radius:20px;z-index:9999;font-size:11px;white-space:nowrap;display:none;"></div>
+
+<!-- BACK BAR -->
+<div class="back-bar" id="back-bar" style="display:none;">
+  <button class="back-bar-btn" onclick="goBack()">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    Back
+  </button>
+  <span class="back-bar-title">Add New Item</span>
+</div>
+
+<!-- ADD CHOICE SCREEN -->
+<div id="choice-screen" style="max-width:400px;margin:80px auto 20px;padding:20px;text-align:center;">
+  <h2 style="font-size:18px;margin-bottom:24px;color:var(--t);font-weight:700;">What would you like to add?</h2>
+  <div style="display:flex;flex-direction:column;gap:14px;">
+    <button class="btn-pri" onclick="selectAddType('item')" style="padding:14px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      Add Product / Service
+    </button>
+    <button class="btn-sec" onclick="selectAddType('post')" style="padding:14px;font-size:13px;border-color:var(--g);color:var(--g);display:flex;align-items:center;justify-content:center;gap:8px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Add Blog Post (SEO)
+    </button>
+  </div>
+  <div style="margin-top:24px;"><button class="lnk" onclick="window.location.href='profile.html'">← Back to Profile</button></div>
+</div>
+
+<!-- ADD FORM -->
+<div class="add-body" id="add-item-form" style="display:none;">
+  <div class="info-note">Items you add will appear on your public profile for customers to view &amp; enquire.</div>
+
+  <div class="fg">
+    <label>Type</label>
+    <select id="etype"><option value="product">Product</option><option value="service">Service</option></select>
+  </div>
+
+  <div class="fg">
+    <label>Name *</label>
+    <input type="text" id="ename" placeholder="e.g. Pahadi Honey 500g"/>
+  </div>
+
+  <div class="fg">
+    <label>Base Price</label>
+    <div class="price-row"><span>₹</span><input type="number" id="eprice" placeholder="250" min="0" step="any" oninput="calcDiscPct()"/></div>
+  </div>
+
+  <div class="fg">
+    <label>Discount Price <span style="font-weight:400;color:var(--t3);">(optional)</span></label>
+    <div class="price-row">
+      <span>₹</span>
+      <input type="number" id="ediscount_price" placeholder="200" min="0" step="any" oninput="calcDiscPct()"/>
+      <span id="add-disc-pct" style="font-size:10px;color:#e05a2b;font-weight:700;margin-left:4px;display:none;"></span>
+    </div>
+  </div>
+
+  <div class="fg">
+    <label>Quantity Type / Unit</label>
+    <select id="eqty_type" onchange="toggleQtyLabel(this.value)">
+      <option value="Quantity">Quantity (Default)</option>
+      <option value="kg">kg (Kilograms)</option>
+      <option value="lt">lt (Liters)</option>
+      <option value="ft">ft (Feet)</option>
+      <option value="m">m (Meters)</option>
+      <option value="other">other (Custom Unit)</option>
+    </select>
+  </div>
+  <div class="fg hidden" id="fg-qty-custom">
+    <label>Custom Unit <span style="font-weight:400;color:var(--t3);">(e.g. People, Rooms, Box)</span></label>
+    <input type="text" id="eqty_custom" placeholder="Enter custom unit..."/>
+  </div>
+
+  <div style="display:flex;gap:15px;margin-bottom:12px;">
+    <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--t2);cursor:pointer;">
+      <input type="checkbox" id="ehas_delivery" style="width:auto;margin:0;"/> Home Delivery
+    </label>
+    <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--t2);cursor:pointer;">
+      <input type="checkbox" id="ebooking_required" style="width:auto;margin:0;"/> Requires Booking
+    </label>
+  </div>
+
+  <div class="fg">
+    <label>Description</label>
+    <textarea id="edesc" rows="2" placeholder="Brief description of your item..."></textarea>
+  </div>
+
+  <div class="fg">
+    <label>Tags / Keywords <span style="font-weight:400;color:var(--t3);">(comma separated)</span></label>
+    <input type="text" id="etags" placeholder="e.g. honey, organic, pure, health"/>
+  </div>
+
+  <div class="fg">
+    <label>Image</label>
+    <input type="file" id="eimg" accept="image/*" onchange="prvImg(this,'eimgp','eimgurl')"/>
+    <div style="margin:4px 0;font-size:11px;color:var(--t3);text-align:center;">— OR —</div>
+    <input type="url" id="eimgurl" placeholder="Paste image URL (https://...)" oninput="prvImgUrl(this.value,'eimgp','eimg')"/>
+    <div style="margin-top:4px;display:flex;gap:8px;align-items:center;">
+      <img id="eimgp" class="img-prev"/>
+      <button type="button" id="btn-del-img" class="lnk" style="color:#e05a2b;display:none;font-size:11px;background:none;border:none;cursor:pointer;" onclick="clearImg()">Remove Image</button>
+    </div>
+  </div>
+
+  <!-- VARIANTS -->
+  <div class="fg">
+    <label>Variants / Sizes / Quantities <span style="font-weight:400;color:var(--t3);">(optional)</span></label>
+    <div style="display:flex;gap:6px;margin-bottom:4px;padding-right:22px;">
+      <span style="flex:2;font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;">Name (e.g. 500g)</span>
+      <span style="flex:1.2;font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;">Base (₹)</span>
+      <span style="flex:1.2;font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;">Disc (₹)</span>
+    </div>
+    <div id="var-list"></div>
+    <button type="button" onclick="addVariant()" style="background:var(--gl);color:var(--g);border:none;padding:5px 10px;border-radius:var(--rs);font-size:11px;font-weight:600;margin-top:4px;cursor:pointer;">+ Add Variant</button>
+  </div>
+
+  <div id="add-err" class="err" style="margin-bottom:8px;"></div>
+  <button class="btn-pri" id="save-btn" onclick="saveNewLst()">Save Item</button>
+  <div style="height:24px;"></div>
+</div>
+
+<script>
+const SU='https://khbotkadtbkwqxjxlyhm.supabase.co';
+const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoYm90a2FkdGJrd3F4anhseWhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NTU4OTAsImV4cCI6MjA4ODUzMTg5MH0.MnNTuoONyBTGZeO1qYyRUTtkRdFreK0OrOcYk66pWxs';
+const {createClient}=supabase;
+const sb=createClient(SU,SK);
+let cu=null, biz=null;
+
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',2200);}
+
+function goBack(){
+  const urlParams = new URLSearchParams(window.location.search);
+  const type = urlParams.get('type');
+  if (type === 'item') {
+    window.location.href = 'profile.html';
+  } else {
+    selectAddType('choice');
+  }
+}
+
+function selectAddType(type){
+  if(type === 'choice') {
+    document.getElementById('choice-screen').style.display = 'block';
+    document.getElementById('add-item-form').style.display = 'none';
+    document.getElementById('back-bar').style.display = 'none';
+  } else if(type === 'item') {
+    document.getElementById('choice-screen').style.display = 'none';
+    document.getElementById('add-item-form').style.display = 'block';
+    document.getElementById('back-bar').style.display = 'flex';
+  } else if(type === 'post') {
+    window.location.href = 'blogpost.html';
+  }
+}
+
+// ===== FORM HELPERS =====
+function calcDiscPct(){
+  const o=parseFloat(document.getElementById('eprice').value)||0;
+  const d=parseFloat(document.getElementById('ediscount_price').value)||0;
+  const el=document.getElementById('add-disc-pct');
+  if(o>0&&d>0&&o>d){el.textContent=Math.round((o-d)/o*100)+'% OFF';el.style.display='inline';}
+  else{el.textContent='';el.style.display='none';}
+}
+
+function toggleQtyLabel(val){
+  const fg=document.getElementById('fg-qty-custom');
+  if(val==='other'){fg.classList.remove('hidden');document.getElementById('eqty_custom').focus();}
+  else fg.classList.add('hidden');
+}
+
+function addVariant(vObj){
+  let name='',price='',discount='';
+  if(vObj){
+    const parsed=typeof vObj==='string'?{name:vObj,price:0,discount_price:null}:vObj;
+    name=parsed.name||'';
+    price=parsed.price!=null?parsed.price:'';
+    discount=parsed.discount_price!=null?parsed.discount_price:'';
+  }
+  const list=document.getElementById('var-list');
+  const row=document.createElement('div');
+  row.className='var-row';
+  row.innerHTML=`
+    <input type="text" class="var-name" placeholder="Name" value="${String(name).replace(/"/g,'&quot;')}" style="flex:2;min-width:0;font-size:11px;padding:5px 7px;"/>
+    <input type="number" class="var-price" placeholder="Price" value="${price}" style="flex:1.2;min-width:0;font-size:11px;padding:5px 7px;" min="0" step="any"/>
+    <input type="number" class="var-discount" placeholder="Disc" value="${discount}" style="flex:1.2;min-width:0;font-size:11px;padding:5px 7px;" min="0" step="any"/>
+    <button type="button" class="var-del" onclick="this.parentElement.remove()">×</button>
+  `;
+  list.appendChild(row);
+  row.querySelector('.var-name').focus();
+}
+
+function getVariants(){
+  return Array.from(document.querySelectorAll('#var-list .var-row')).map(row=>{
+    const name=row.querySelector('.var-name').value.trim();
+    const priceRaw=row.querySelector('.var-price').value.trim();
+    const discountRaw=row.querySelector('.var-discount').value.trim();
+    if(!name&&!priceRaw)return null;
+    return{name:name||'Default',price:parseFloat(priceRaw)||0,discount_price:discountRaw?parseFloat(discountRaw):null};
+  }).filter(Boolean);
+}
+
+function prvImg(inp,pid,urlId){
+  const f=inp.files[0];if(!f)return;
+  if(urlId){const u=document.getElementById(urlId);if(u)u.value='';}
+  const r=new FileReader();
+  r.onload=e=>{
+    const p=document.getElementById(pid);p.src=e.target.result;p.style.display='block';
+    document.getElementById('btn-del-img').style.display='inline';
+  };
+  r.readAsDataURL(f);
+}
+function prvImgUrl(url,pid,fileId){
+  if(fileId){const f=document.getElementById(fileId);if(f)f.value='';}
+  const p=document.getElementById(pid);if(!p)return;
+  if(url.trim()){p.src=url.trim();p.style.display='block';document.getElementById('btn-del-img').style.display='inline';}
+  else{p.src='';p.style.display='none';document.getElementById('btn-del-img').style.display='none';}
+}
+function clearImg(){
+  document.getElementById('eimg').value='';
+  document.getElementById('eimgurl').value='';
+  const p=document.getElementById('eimgp');p.src='';p.style.display='none';
+  document.getElementById('btn-del-img').style.display='none';
+}
+
+async function compress(file,kb=100){
+  return new Promise(res=>{
+    const r=new FileReader();r.onload=e=>{
+      const img=new Image();img.onload=()=>{
+        const c=document.createElement('canvas');let w=img.width,h=img.height,mx=800;
+        if(w>mx||h>mx){if(w>h){h=Math.round(h*mx/w);w=mx;}else{w=Math.round(w*mx/h);h=mx;}}
+        c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
+        let q=0.85;const go=()=>{const d=c.toDataURL('image/webp',q);if((d.length*3/4)/1024>kb&&q>0.1){q-=0.1;go();}else res(d);};go();
+      };img.src=e.target.result;
+    };r.readAsDataURL(file);
+  });
+}
+
+// ===== SAVE =====
+function generateUUID() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+async function saveNewLst(){
+  const name=document.getElementById('ename').value.trim();
+  const errEl=document.getElementById('add-err');
+  errEl.textContent='';
+  if(!name){errEl.textContent='Item name is required.';return;}
+
+  const btn=document.getElementById('save-btn');
+  btn.textContent='Saving…';btn.disabled=true;
+
+  const selType=document.getElementById('eqty_type').value;
+  const qtyLabel=selType==='other'?(document.getElementById('eqty_custom').value.trim()||'Quantity'):selType;
+  const rawP=document.getElementById('eprice').value.trim();
+  const rawD=document.getElementById('ediscount_price').value.trim();
+  const price=rawP?`₹${rawP}${qtyLabel!=='Quantity'?'/'+qtyLabel:''}`:null;
+  const discount_price=rawD?`₹${rawD}${qtyLabel!=='Quantity'?'/'+qtyLabel:''}`:null;
+  const variants=getVariants();
+
+  const pay={
+    business_id:biz.id,
+    id:generateUUID(),
+    listing_type:document.getElementById('etype').value,
+    name,price,discount_price,qty_label:qtyLabel,
+    has_delivery:document.getElementById('ehas_delivery').checked,
+    booking_required:document.getElementById('ebooking_required').checked,
+    description:document.getElementById('edesc').value.trim()||null,
+    tags:document.getElementById('etags').value.trim()||null,
+    variants:variants.length?variants:null,
+    is_available:true
+  };
+
+  const imf=document.getElementById('eimg').files[0];
+  const urlInp=document.getElementById('eimgurl').value.trim();
+  if(imf) {
+    try {
+      pay.image_url=await uploadToCloudinary(imf);
+    } catch(err) {
+      errEl.textContent='Image upload failed: '+err.message;
+      btn.textContent='Save Item';btn.disabled=false;
+      return;
+    }
+  }
+  else if(urlInp) {
+    pay.image_url=await uploadToCloudinary(urlInp).catch(() => urlInp);
+  }
+
+  const {error}=await sb.from('listings').insert(pay);
+  if(error){errEl.textContent=error.message;btn.textContent='Save Item';btn.disabled=false;return;}
+
+  toast('Item added!');
+  setTimeout(()=>window.location.href='profile.html',700);
+}
+
+// ===== INIT =====
+async function init(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){window.location.href='partner.html';return;}
+  cu=session.user;
+  const {data:b}=await sb.from('businesses').select('*').eq('user_id',cu.id).single();
+  if(!b){toast('No business found.');setTimeout(()=>window.location.href='partner.html',1500);return;}
+  biz=b;
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const type = urlParams.get('type');
+  if (type === 'item') {
+    selectAddType('item');
+  } else {
+    selectAddType('choice');
+  }
+}
+window.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>

@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Item Details – MyPahad Partner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="cloudinary-utils.js"></script>
+<link rel="stylesheet" href="mp.css"/>
+<style>
+body{padding-bottom:20px; background:#f0f0ee;}
+.back-bar{background:var(--g);display:flex;align-items:center;gap:8px;padding:7px 10px;position:sticky;top:0;z-index:200;}
+.back-bar-btn{background:rgba(255,255,255,0.15);border:none;color:#fff;padding:5px 9px;border-radius:var(--rs);font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit;}
+.back-bar-title{flex:1;font-size:14px;font-weight:700;color:#fff;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.back-bar-del{background:none;border:none;color:rgba(255,255,255,0.85);padding:6px;cursor:pointer;display:flex;align-items:center;}
+
+.add-body{padding:0;max-width:500px;margin:0 auto;background:#fff;min-height:calc(100vh - 44px);box-shadow:0 0 10px rgba(0,0,0,0.05);}
+
+.lst-img-wrapper{padding:12px;position:relative;background:#fff;}
+.lstimg-boxed{width:100%;aspect-ratio:1;object-fit:cover;display:block;border-radius:var(--r);border:1px solid var(--bd);}
+.lstph-boxed{width:100%;aspect-ratio:1;background:var(--gl);display:flex;align-items:center;justify-content:center;border-radius:var(--r);border:1px solid var(--bd);}
+.lst-img-edit-btn{position:absolute;top:20px;right:20px;background:rgba(0,0,0,0.6);border:none;color:#fff;border-radius:var(--rs);padding:5px 10px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit;}
+.lstbody{background:#fff;padding:12px;}
+.lstname{font-size:16px;font-weight:700;line-height:1.3;color:var(--t);}
+.lstprice{font-size:18px;color:var(--g);font-weight:700;}
+.disc-pct{background:#e05a2b;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:var(--rs);margin-left:4px;vertical-align:middle;}
+.lstdesc{font-size:12px;color:var(--t2);margin-top:8px;line-height:1.7;}
+.lst-tag{display:inline-flex;align-items:center;gap:4px;background:var(--gl);color:var(--g);border:1px solid #b5d9c5;border-radius:var(--rs);padding:3px 8px;font-size:10px;font-weight:600;}
+.lst-tag.orange{background:#fff3ed;color:#e05a2b;border-color:#f5c8a8;}
+.lst-variants-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--t3);margin-bottom:8px;margin-top:14px;}
+
+.edit-inline{background:none;border:none;padding:2px 4px;cursor:pointer;color:var(--t3);display:inline-flex;align-items:center;vertical-align:middle;margin-left:4px;}
+.edit-inline svg{display:block;}
+.edit-inline:active{color:var(--g);}
+
+.status-toggle{display:flex;align-items:center;gap:7px;background:#f8f8f8;border:1px solid var(--bd);border-radius:var(--rs);padding:7px 10px;margin:10px 0;}
+.toggle-sw{position:relative;width:34px;height:19px;flex-shrink:0;cursor:pointer;}
+.toggle-sw input{opacity:0;width:0;height:0;}
+.toggle-sl{position:absolute;inset:0;background:#ccc;border-radius:10px;cursor:pointer;transition:0.2s;}
+.toggle-sl:before{content:'';position:absolute;left:2px;top:2px;width:15px;height:15px;background:#fff;border-radius:50%;transition:0.2s;}
+.toggle-sw input:checked+.toggle-sl{background:var(--g);}
+.toggle-sw input:checked+.toggle-sl:before{transform:translateX(15px);}
+
+.ie-mo{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:400;display:none;align-items:flex-end;}
+.ie-mo.open{display:flex;}
+.ie-box{background:#fff;width:100%;max-width:500px;margin:0 auto;border-radius:var(--r) var(--r) 0 0;padding:14px;max-height:85vh;overflow-y:auto;box-shadow:0 -2px 10px rgba(0,0,0,0.15);}
+.ie-title{font-size:13px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
+
+.price-row{display:flex;align-items:center;border:1px solid var(--bd);border-radius:var(--rs);padding:0 8px;background:#fff;}
+.price-row span{font-size:12px;font-weight:600;color:var(--t2);margin-right:4px;}
+.price-row input{border:none;padding:7px 0;flex:1;outline:none;font-size:12px;}
+
+.var-row{display:flex;gap:5px;align-items:center;margin-bottom:5px;}
+.var-row input{flex:1;font-size:11px;padding:5px 7px;}
+.var-del{background:none;border:none;color:#c00;font-size:15px;padding:0 3px;flex-shrink:0;cursor:pointer;}
+.img-prev{width:80px;height:60px;border-radius:var(--rs);object-fit:cover;display:none;margin-top:6px;border:1px solid var(--bd);}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+input[type=number]{-moz-appearance:textfield;}
+.info-note{background:var(--gl);border-radius:var(--rs);padding:7px 10px;font-size:10px;color:var(--g);margin-bottom:12px;line-height:1.5;}
+
+.readmore-btn{background:none;border:none;color:var(--g);font-weight:600;font-size:11px;padding:0;cursor:pointer;margin-left:4px;}
+.chip-btn{background:#fff;border:1px solid var(--bd);padding:5px 10px;border-radius:var(--rs);font-size:11px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:4px;color:var(--t2);margin-top:6px;}
+.chip-btn:active{background:var(--gl);}
+</style>
+</head>
+<body>
+<div id="toast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:7px 16px;border-radius:20px;z-index:9999;font-size:11px;white-space:nowrap;display:none;"></div>
+
+<!-- BACK BAR -->
+<div class="back-bar">
+  <button class="back-bar-btn" onclick="goBack()">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    Back
+  </button>
+  <span class="back-bar-title" id="item-title-nav">Item Details</span>
+  <button class="back-bar-del" onclick="deleteItem()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+  </button>
+</div>
+
+<!-- ITEM DETAILS CONTAINER -->
+<div class="add-body" id="item-details-container">
+  <div style="text-align:center;padding:30px;color:var(--t3);font-size:12px;">Loading...</div>
+</div>
+
+<!-- INLINE EDIT MODAL -->
+<div class="ie-mo" id="le-mo" onclick="closeLE(event)">
+  <div class="ie-box">
+    <div class="ie-title"><span id="le-title">Edit Field</span><button onclick="closeLE()" style="background:none;border:none;font-size:18px;color:var(--t3);cursor:pointer;">×</button></div>
+    <div id="le-body"></div>
+    <div style="display:flex;gap:7px;margin-top:12px;">
+      <button class="btn-pri" id="le-save-btn" onclick="saveLE()">Save</button>
+      <button class="btn-sm" style="flex:1;" onclick="closeLE()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SU='https://khbotkadtbkwqxjxlyhm.supabase.co';
+const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoYm90a2FkdGJrd3F4anhseWhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NTU4OTAsImV4cCI6MjA4ODUzMTg5MH0.MnNTuoONyBTGZeO1qYyRUTtkRdFreK0OrOcYk66pWxs';
+const {createClient}=supabase;
+const sb=createClient(SU,SK);
+let cu=null, biz=null, listingId=null, currentListing=null, leSaveFunc=null;
+
+const editIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',2200);}
+
+function goBack() {
+  if (document.referrer && (document.referrer.includes('profile.html') || document.referrer.includes('stats.html'))) {
+    window.history.back();
+  } else {
+    window.location.href = 'profile.html';
+  }
+}
+
+function parsePriceNum(p){if(!p)return '';return String(p).replace(/[^0-9.]/g,'');}
+
+function parseLegacyVariant(str){
+  if(typeof str!=='string')return str;
+  try{return JSON.parse(str);}catch(e){}
+  return {name:str,price:0,discount_price:null};
+}
+
+async function loadListingData(){
+  const urlParams = new URLSearchParams(window.location.search);
+  listingId = urlParams.get('id');
+  if(!listingId) {
+    window.location.href = 'profile.html';
+    return;
+  }
+
+  const {data: l, error} = await sb.from('listings').select('*').eq('id', listingId).single();
+  if (error || !l) {
+    toast('Error loading item.');
+    setTimeout(() => window.location.href = 'profile.html', 1500);
+    return;
+  }
+  
+  currentListing = l;
+  document.getElementById('item-title-nav').textContent = l.name;
+  
+  renderDetails();
+}
+
+function renderDetails() {
+  const l = currentListing;
+  const container = document.getElementById('item-details-container');
+  
+  const imgHtml = l.image_url
+    ? `<img class="lstimg-boxed" src="${getOptimizedImageUrl(l.image_url, 'detail')}" alt="${l.name}"/>`
+    : `<div class="lstph-boxed"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--g)" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`;
+  
+  const orig = parseFloat(String(l.price||'').replace(/[^0-9.]/g,''))||0;
+  const disc = parseFloat(String(l.discount_price||'').replace(/[^0-9.]/g,''))||0;
+  let priceHtml = '';
+  if (l.discount_price && l.price) {
+    let pctSpan = '';
+    if (orig > 0 && disc > 0 && orig > disc) {
+      const pct = Math.round((orig - disc) / orig * 100);
+      pctSpan = `<span class="disc-pct">${pct}% OFF</span>`;
+    }
+    priceHtml = `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px;"><span class="lstprice" style="color:#e05a2b;">${l.discount_price}</span><span style="font-size:13px;text-decoration:line-through;color:#aaa;">${l.price}</span>${pctSpan}<button class="edit-inline" onclick="editLstPrice()">${editIcon}</button></div>`;
+  } else if (l.price) {
+    priceHtml = `<div style="display:flex;align-items:center;gap:6px;margin-top:4px;"><span class="lstprice">${l.price}</span><button class="edit-inline" onclick="editLstPrice()">${editIcon}</button></div>`;
+  } else {
+    priceHtml = `<button class="chip-btn" onclick="editLstPrice()">+ Add Price</button>`;
+  }
+
+  let descHtml = '';
+  if (l.description) {
+    const hasReadMore = l.description.length > 200;
+    const shortText = hasReadMore ? l.description.substring(0, 200) : l.description;
+    descHtml = `
+      <div class="lstdesc">
+        <span id="desc-text">${shortText}</span>
+        ${hasReadMore ? `<span id="desc-more" style="display:none;">${l.description.substring(200)}</span><button class="readmore-btn" id="readmore-btn" onclick="toggleReadMore()">... Read more</button>` : ''}
+        <button class="edit-inline" onclick="editLstField('description','Description')">${editIcon}</button>
+      </div>
+    `;
+  } else {
+    descHtml = `<button class="chip-btn" onclick="editLstField('description','Description')">+ Add Description</button>`;
+  }
+
+  const tagsListStr = l.tags || '';
+  const tagsHtml = `
+    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;align-items:center;">
+      <span class="lst-tag">${l.listing_type||'product'}</span>
+      ${l.has_delivery?`<span class="lst-tag">🚚 Delivery</span>`:''}
+      ${l.booking_required?`<span class="lst-tag orange">📅 Booking</span>`:''}
+      ${tagsListStr ? tagsListStr.split(',').map(t => `<span class="lst-tag" style="background:#f0f0f0;color:#555;border-color:#ccc;">#${t.trim()}</span>`).join('') : ''}
+      <button class="edit-inline" onclick="editLstField('tags','Tags')">${editIcon}</button>
+    </div>
+  `;
+
+  const vars = l.variants || [];
+  const varHtml = vars.length ? `
+    <div style="margin-top:12px;">
+      <div class="lst-variants-lbl">Variants / Sizes</div>
+      <div>
+        ${vars.map(v => {
+          const vObj = typeof v === 'string' ? parseLegacyVariant(v) : v;
+          let pi = '';
+          if (vObj.price) {
+            if (vObj.discount_price !== null && vObj.discount_price !== undefined) {
+              pi = ` - <span style="color:#e05a2b;font-weight:700;">₹${vObj.discount_price}</span> <span style="text-decoration:line-through;color:#aaa;font-size:11px;">₹${vObj.price}</span>`;
+            } else {
+              pi = ` - ₹${vObj.price}`;
+            }
+          }
+          return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;">
+            <span style="font-size:12px;font-weight:500;">${vObj.name||'—'}</span>
+            <span style="font-size:12px;">${pi||'—'}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  ` : '';
+
+  container.innerHTML = `
+    <div class="lst-img-wrapper">
+      ${imgHtml}
+      <button class="lst-img-edit-btn" onclick="editLstImg()">✏ Edit Image</button>
+    </div>
+    <div class="lstbody">
+      <div style="display:flex;align-items:center;gap:4px;">
+        <span class="lstname">${l.name}</span>
+        <button class="edit-inline" onclick="editLstField('name','Name')">${editIcon}</button>
+      </div>
+      ${priceHtml}
+      ${descHtml}
+      ${tagsHtml}
+      ${varHtml}
+      
+      <div class="status-toggle" style="margin-top:16px;">
+        <label class="toggle-sw"><input type="checkbox" id="lst-active-tog" ${l.is_available!==false?'checked':''} onchange="toggleLstActive(this.checked)"/><span class="toggle-sl"></span></label>
+        <span style="font-size:11px;font-weight:600;color:var(--t2);">Visible to customers</span>
+      </div>
+      <div class="status-toggle">
+        <label class="toggle-sw"><input type="checkbox" id="lst-pin-tog" ${!!l.is_featured?'checked':''} onchange="toggleLstPin(this.checked)"/><span class="toggle-sl"></span></label>
+        <span style="font-size:11px;font-weight:600;color:var(--t2);">Pin to top of shop (max 3 items)</span>
+      </div>
+
+      <div style="display:flex;gap:6px;margin-top:16px;">
+        <button class="btn-pri" onclick="editLstFull()">✏ Edit Full Details</button>
+      </div>
+      <div class="info-note" style="margin-top:10px;">Changes save instantly and appear on your public profile.</div>
+    </div>
+  `;
+}
+
+function toggleReadMore() {
+  const moreSpan = document.getElementById('desc-more');
+  const btn = document.getElementById('readmore-btn');
+  if (moreSpan.style.display === 'none') {
+    moreSpan.style.display = 'inline';
+    btn.textContent = ' Show less';
+  } else {
+    moreSpan.style.display = 'none';
+    btn.textContent = '... Read more';
+  }
+}
+
+async function toggleLstActive(checked){
+  const {error} = await sb.from('listings').update({is_available: checked}).eq('id', listingId);
+  if (error) {
+    toast('Error: ' + error.message);
+    document.getElementById('lst-active-tog').checked = !checked;
+  } else {
+    toast(checked ? 'Item now visible' : 'Item hidden');
+    currentListing.is_available = checked;
+  }
+}
+
+async function toggleLstPin(checked){
+  if (checked) {
+    const {data: listings, error} = await sb.from('listings').select('id, is_featured').eq('business_id', biz.id);
+    if (error) {
+      toast("Error checking pin count: " + error.message);
+      document.getElementById('lst-pin-tog').checked = false;
+      return;
+    }
+    const currentlyPinnedCount = (listings || []).filter(l => l.is_featured && l.id !== listingId).length;
+    if (currentlyPinnedCount >= 3) {
+      toast("You can only pin up to 3 items at the top!");
+      document.getElementById('lst-pin-tog').checked = false;
+      return;
+    }
+  }
+  const {error} = await sb.from('listings').update({is_featured: checked}).eq('id', listingId);
+  if (error) {
+    toast('Error: ' + error.message);
+    document.getElementById('lst-pin-tog').checked = !checked;
+  } else {
+    toast(checked ? 'Pinned to top' : 'Unpinned');
+    currentListing.is_featured = checked;
+  }
+}
+
+function closeLE(e){
+  if(e && e.target !== document.getElementById('le-mo')) return;
+  document.getElementById('le-mo').classList.remove('open');
+}
+
+function saveLE(){
+  if(leSaveFunc) leSaveFunc();
+}
+
+function editLstField(field, label) {
+  const currentVal = currentListing[field] || '';
+  document.getElementById('le-title').textContent = 'Edit ' + label.split(' ')[0];
+  const isLong = field === 'description';
+  document.getElementById('le-body').innerHTML = isLong
+    ? `<textarea id="le-inp" rows="4" style="width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:var(--rs);font-size:12px;font-family:inherit;">${currentVal}</textarea>`
+    : `<input type="text" id="le-inp" value="${currentVal.replace(/"/g,'&quot;')}" style="width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:var(--rs);font-size:12px;"/>`;
+  
+  leSaveFunc = async () => {
+    const btn = document.getElementById('le-save-btn');
+    btn.textContent = 'Saving...'; btn.disabled = true;
+    const val = document.getElementById('le-inp').value.trim();
+    
+    if (field === 'name' && !val) {
+      toast('Name is required.');
+      btn.textContent = 'Save'; btn.disabled = false;
+      return;
+    }
+    
+    const pay = {[field]: val || null};
+    const {error} = await sb.from('listings').update(pay).eq('id', listingId);
+    if (error) {
+      toast('Error: ' + error.message);
+      btn.textContent = 'Save'; btn.disabled = false;
+      return;
+    }
+    toast('Saved!');
+    closeLE();
+    await loadListingData();
+  };
+  document.getElementById('le-mo').classList.add('open');
+  setTimeout(() => document.getElementById('le-inp')?.focus(), 100);
+}
+
+function editLstPrice() {
+  const l = currentListing || {};
+  const standardUnits = ['Quantity','kg','lt','ft','m'];
+  const isCustom = l.qty_label && !standardUnits.includes(l.qty_label);
+  document.getElementById('le-title').textContent = 'Edit Price';
+  document.getElementById('le-body').innerHTML = `
+    <div class="fg">
+      <label>Base Price (₹)</label>
+      <div class="price-row">
+        <span>₹</span>
+        <input type="number" id="le-price" value="${parsePriceNum(l.price)}" min="0" step="any" oninput="calcDiscPctLE()"/>
+      </div>
+    </div>
+    <div class="fg">
+      <label>Discount Price (₹) <span style="font-weight:400;color:var(--t3);">(optional)</span></label>
+      <div class="price-row">
+        <span>₹</span>
+        <input type="number" id="le-disc" value="${parsePriceNum(l.discount_price)}" min="0" step="any" oninput="calcDiscPctLE()"/>
+        <span id="le-pct" style="font-size:10px;color:#e05a2b;font-weight:700;margin-left:4px;display:none;"></span>
+      </div>
+    </div>
+    <div class="fg">
+      <label>Unit / Quantity Label</label>
+      <select id="le-qty" onchange="toggleQtyLabelLE(this.value)">
+        <option value="Quantity">Quantity (Default)</option>
+        <option value="kg">kg</option>
+        <option value="lt">lt</option>
+        <option value="ft">ft</option>
+        <option value="m">m</option>
+        <option value="other">Custom</option>
+      </select>
+    </div>
+    <div class="fg ${isCustom?'':'hidden'}" id="fg-le-qty-custom">
+      <label>Custom Unit</label>
+      <input type="text" id="le-qty-custom" value="${isCustom?l.qty_label:''}" placeholder="e.g. Plate, Box"/>
+    </div>
+  `;
+  document.getElementById('le-qty').value = isCustom ? 'other' : (l.qty_label || 'Quantity');
+  
+  leSaveFunc = async () => {
+    const btn = document.getElementById('le-save-btn');
+    btn.textContent = 'Saving...'; btn.disabled = true;
+    const rawP = document.getElementById('le-price').value.trim();
+    const rawD = document.getElementById('le-disc').value.trim();
+    const selType = document.getElementById('le-qty').value;
+    const unit = selType === 'other' ? (document.getElementById('le-qty-custom').value.trim() || 'Quantity') : selType;
+    const price = rawP ? `₹${rawP}${unit !== 'Quantity' ? '/' + unit : ''}` : null;
+    const discount_price = rawD ? `₹${rawD}${unit !== 'Quantity' ? '/' + unit : ''}` : null;
+    
+    const {error} = await sb.from('listings').update({price, discount_price, qty_label: unit}).eq('id', listingId);
+    if (error) {
+      toast('Error: ' + error.message);
+      btn.textContent = 'Save'; btn.disabled = false;
+      return;
+    }
+    toast('Price updated!');
+    closeLE();
+    await loadListingData();
+  };
+  document.getElementById('le-mo').classList.add('open');
+  calcDiscPctLE();
+}
+
+function calcDiscPctLE(){
+  const o=parseFloat(document.getElementById('le-price')?.value)||0;
+  const d=parseFloat(document.getElementById('le-disc')?.value)||0;
+  const el=document.getElementById('le-pct');
+  if(!el)return;
+  if(o>0&&d>0&&o>d){el.textContent=Math.round((o-d)/o*100)+'% OFF';el.style.display='inline';}
+  else{el.textContent='';el.style.display='none';}
+}
+
+function toggleQtyLabelLE(val){
+  const fg=document.getElementById('fg-le-qty-custom');
+  if(val==='other'){fg.classList.remove('hidden');document.getElementById('le-qty-custom').focus();}
+  else fg.classList.add('hidden');
+}
+
+function editLstImg() {
+  const l = currentListing || {};
+  document.getElementById('le-title').textContent = 'Edit Image';
+  document.getElementById('le-body').innerHTML = `
+    <div class="fg">
+      <label>Upload Image</label>
+      <input type="file" id="le-imgf" accept="image/*" onchange="prvImg(this,'le-imgp','le-imgurl')"/>
+    </div>
+    <div style="margin:4px 0;font-size:11px;color:var(--t3);text-align:center;">— OR —</div>
+    <div class="fg">
+      <label>Image URL</label>
+      <input type="url" id="le-imgurl" placeholder="https://" value="${(l.image_url && !l.image_url.startsWith('data:')) ? l.image_url : ''}" oninput="prvImgUrl(this.value,'le-imgp','le-imgf')"/>
+    </div>
+    <div style="margin-top:6px;display:flex;gap:8px;align-items:center;">
+      ${l.image_url ? `<img id="le-imgp" class="img-prev" src="${getOptimizedImageUrl(l.image_url, 'card')}" style="display:block;"/>` : `<img id="le-imgp" class="img-prev"/>`}
+      <button type="button" id="btn-del-img-modal" class="lnk" style="color:#e05a2b;display:${l.image_url?'inline':'none'};font-size:11px;background:none;border:none;cursor:pointer;" onclick="clearImgModal()">Remove Image</button>
+    </div>
+  `;
+  
+  leSaveFunc = async () => {
+    const btn = document.getElementById('le-save-btn');
+    btn.textContent = 'Saving...'; btn.disabled = true;
+    const f = document.getElementById('le-imgf').files[0];
+    const url = document.getElementById('le-imgurl').value.trim();
+    let image_url = l.image_url;
+    try {
+      if (f) {
+        image_url = await uploadToCloudinary(f);
+      } else if (url) {
+        image_url = await uploadToCloudinary(url).catch(() => url);
+      } else if (!document.getElementById('le-imgp').src || document.getElementById('le-imgp').style.display === 'none') {
+        image_url = null;
+      }
+    } catch(err) {
+      toast('Upload failed: '+err.message);
+      btn.textContent = 'Save'; btn.disabled = false;
+      return;
+    }
+    
+    const {error} = await sb.from('listings').update({image_url}).eq('id', listingId);
+    if (error) {
+      toast('Error: ' + error.message);
+      btn.textContent = 'Save'; btn.disabled = false;
+      return;
+    }
+    toast('Image updated!');
+    closeLE();
+    await loadListingData();
+  };
+  document.getElementById('le-mo').classList.add('open');
+}
+
+function clearImgModal(){
+  document.getElementById('le-imgf').value='';
+  document.getElementById('le-imgurl').value='';
+  const p=document.getElementById('le-imgp');p.src='';p.style.display='none';
+  document.getElementById('btn-del-img-modal').style.display='none';
+}
+
+function prvImg(inp,pid,urlId){
+  const f=inp.files[0];if(!f)return;
+  if(urlId){const u=document.getElementById(urlId);if(u)u.value='';}
+  const r=new FileReader();
+  r.onload=e=>{
+    const p=document.getElementById(pid);p.src=e.target.result;p.style.display='block';
+    const delBtn = document.getElementById('btn-del-img-modal');
+    if (delBtn) delBtn.style.display='inline';
+  };
+  r.readAsDataURL(f);
+}
+
+function prvImgUrl(url,pid,fileId){
+  if(fileId){const f=document.getElementById(fileId);if(f)f.value='';}
+  const p=document.getElementById(pid);if(!p)return;
+  if(url.trim()){
+    p.src=url.trim();p.style.display='block';
+    const delBtn = document.getElementById('btn-del-img-modal');
+    if (delBtn) delBtn.style.display='inline';
+  } else {
+    p.src='';p.style.display='none';
+    const delBtn = document.getElementById('btn-del-img-modal');
+    if (delBtn) delBtn.style.display='none';
+  }
+}
+
+async function compress(file,kb=100){
+  return new Promise(res=>{
+    const r=new FileReader();r.onload=e=>{
+      const img=new Image();img.onload=()=>{
+        const c=document.createElement('canvas');let w=img.width,h=img.height,mx=800;
+        if(w>mx||h>mx){if(w>h){h=Math.round(h*mx/w);w=mx;}else{w=Math.round(w*mx/h);h=mx;}}
+        c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
+        let q=0.85;const go=()=>{const d=c.toDataURL('image/webp',q);if((d.length*3/4)/1024>kb&&q>0.1){q-=0.1;go();}else res(d);};go();
+      };img.src=e.target.result;
+    };r.readAsDataURL(file);
+  });
+}
+
+function editLstFull() {
+  const l = currentListing || {};
+  document.getElementById('le-title').textContent = 'Edit Full Details';
+  document.getElementById('le-body').innerHTML = `
+    <div class="fg">
+      <label>Type</label>
+      <select id="le-type"><option value="product">Product</option><option value="service">Service</option></select>
+    </div>
+    <div class="fg">
+      <label>Name *</label>
+      <input type="text" id="le-name" value="${l.name.replace(/"/g,'&quot;')}"/>
+    </div>
+    <div class="fg">
+      <label>Description</label>
+      <textarea id="le-desc" rows="3">${l.description || ''}</textarea>
+    </div>
+    <div style="display:flex;gap:15px;margin-bottom:12px;">
+      <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--t2);cursor:pointer;">
+        <input type="checkbox" id="le-del" style="width:auto;margin:0;" ${l.has_delivery?'checked':''}/> Home Delivery
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--t2);cursor:pointer;">
+        <input type="checkbox" id="le-book" style="width:auto;margin:0;" ${l.booking_required?'checked':''}/> Booking Required
+      </label>
+    </div>
+    <div class="fg">
+      <label>Variants / Sizes / Quantities <span style="font-weight:400;color:var(--t3);">(optional)</span></label>
+      <div style="display:flex;gap:6px;margin-bottom:4px;padding-right:22px;">
+        <span style="flex:2;font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;">Name</span>
+        <span style="flex:1.2;font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;">Base (₹)</span>
+        <span style="flex:1.2;font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;">Disc (₹)</span>
+      </div>
+      <div id="le-var-list"></div>
+      <button type="button" onclick="addVariantModal()" style="background:var(--gl);color:var(--g);border:none;padding:5px 10px;border-radius:var(--rs);font-size:11px;font-weight:600;margin-top:4px;cursor:pointer;">+ Add Variant</button>
+    </div>
+  `;
+  document.getElementById('le-type').value = l.listing_type || 'product';
+  const vars = l.variants || [];
+  vars.forEach(v => addVariantModal(v));
+  
+  leSaveFunc = async () => {
+    const btn = document.getElementById('le-save-btn');
+    const name = document.getElementById('le-name').value.trim();
+    if (!name) {
+      toast('Item name is required.');
+      return;
+    }
+    btn.textContent = 'Saving...'; btn.disabled = true;
+    const variants = getVariantsModal();
+    
+    const pay = {
+      listing_type: document.getElementById('le-type').value,
+      name,
+      description: document.getElementById('le-desc').value.trim() || null,
+      has_delivery: document.getElementById('le-del').checked,
+      booking_required: document.getElementById('le-book').checked,
+      variants: variants.length ? variants : null
+    };
+    
+    const {error} = await sb.from('listings').update(pay).eq('id', listingId);
+    if (error) {
+      toast('Error: ' + error.message);
+      btn.textContent = 'Save'; btn.disabled = false;
+      return;
+    }
+    toast('Updated!');
+    closeLE();
+    await loadListingData();
+  };
+  document.getElementById('le-mo').classList.add('open');
+}
+
+function addVariantModal(vObj){
+  let name='',price='',discount='';
+  if(vObj){
+    const parsed=typeof vObj==='string'?parseLegacyVariant(vObj):vObj;
+    name=parsed.name||'';
+    price=parsed.price!=null?parsed.price:'';
+    discount=parsed.discount_price!=null?parsed.discount_price:'';
+  }
+  const list=document.getElementById('le-var-list');
+  if(!list)return;
+  const row=document.createElement('div');
+  row.className='var-row';
+  row.innerHTML=`
+    <input type="text" class="var-name" placeholder="Name" value="${String(name).replace(/"/g,'&quot;')}" style="flex:2;min-width:0;font-size:11px;padding:5px 7px;"/>
+    <input type="number" class="var-price" placeholder="Price" value="${price}" style="flex:1.2;min-width:0;font-size:11px;padding:5px 7px;" min="0" step="any"/>
+    <input type="number" class="var-discount" placeholder="Disc" value="${discount}" style="flex:1.2;min-width:0;font-size:11px;padding:5px 7px;" min="0" step="any"/>
+    <button type="button" class="var-del" onclick="this.parentElement.remove()">×</button>
+  `;
+  list.appendChild(row);
+}
+
+function getVariantsModal(){
+  return Array.from(document.querySelectorAll('#le-var-list .var-row')).map(row=>{
+    const name=row.querySelector('.var-name').value.trim();
+    const priceRaw=row.querySelector('.var-price').value.trim();
+    const discountRaw=row.querySelector('.var-discount').value.trim();
+    if(!name&&!priceRaw)return null;
+    return{name:name||'Default',price:parseFloat(priceRaw)||0,discount_price:discountRaw?parseFloat(discountRaw):null};
+  }).filter(Boolean);
+}
+
+async function deleteItem(){
+  if(!confirm('Are you sure you want to delete this item?')) return;
+  const {error} = await sb.from('listings').delete().eq('id', listingId);
+  if(error) {
+    toast('Error: ' + error.message);
+  } else {
+    toast('Item deleted!');
+    setTimeout(()=>window.location.href='profile.html',700);
+  }
+}
+
+// ===== INIT =====
+async function init(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){window.location.href='index.html';return;}
+  cu=session.user;
+  const {data:b}=await sb.from('businesses').select('*').eq('user_id',cu.id).single();
+  if(!b){toast('No business found.');setTimeout(()=>window.location.href='partner.html',1500);return;}
+  biz=b;
+  await loadListingData();
+}
+window.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
