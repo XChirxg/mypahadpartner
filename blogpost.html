@@ -371,7 +371,7 @@ function renderDetails() {
   container.innerHTML = `
     <div class="post-media-wrapper">
       ${mediaHtml}
-      <button class="post-media-edit-btn" onclick="editPostMedia()">✏ Edit Media</button>
+      <button class="post-media-edit-btn" onclick="editPostMedia()"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;margin-right:3px;"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit Media</button>
     </div>
     <div class="post-body">
       <div style="display:flex;align-items:center;gap:4px;">
@@ -379,7 +379,7 @@ function renderDetails() {
         <button class="edit-inline" onclick="editPostField('title','Title')">${editIcon}</button>
       </div>
       <div class="post-date">
-        <span>📅 Published ${formattedDate}</span>
+        <span><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;margin-right:3px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Published ${formattedDate}</span>
       </div>
       <div style="position:relative; margin-top:14px; padding-top:6px; border-top:1px solid #f0f0f0;">
         <div class="post-content">${p.content}</div>
@@ -389,7 +389,7 @@ function renderDetails() {
       ${tagsHtml}
 
       <div style="display:flex;gap:6px;margin-top:20px;padding-top:10px;">
-        <button class="btn-pri" onclick="editPostFull()">✏ Edit Full Post</button>
+        <button class="btn-pri" onclick="editPostFull()">Edit Full Post</button>
       </div>
       <div class="info-note" style="margin-top:10px;">Updates save instantly and appear on your public blog post.</div>
     </div>

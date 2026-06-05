@@ -188,8 +188,8 @@ function renderDetails() {
   const tagsHtml = `
     <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;align-items:center;">
       <span class="lst-tag">${l.listing_type||'product'}</span>
-      ${l.has_delivery?`<span class="lst-tag">🚚 Delivery</span>`:''}
-      ${l.booking_required?`<span class="lst-tag orange">📅 Booking</span>`:''}
+      ${l.has_delivery?`<span class="lst-tag"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;margin-right:3px;"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Delivery</span>`:''}
+      ${l.booking_required?`<span class="lst-tag orange"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;margin-right:3px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Booking</span>`:''}
       ${tagsListStr ? tagsListStr.split(',').map(t => `<span class="lst-tag" style="background:#f0f0f0;color:#555;border-color:#ccc;">#${t.trim()}</span>`).join('') : ''}
       <button class="edit-inline" onclick="editLstField('tags','Tags')">${editIcon}</button>
     </div>
@@ -222,7 +222,7 @@ function renderDetails() {
   container.innerHTML = `
     <div class="lst-img-wrapper">
       ${imgHtml}
-      <button class="lst-img-edit-btn" onclick="editLstImg()">✏ Edit Image</button>
+      <button class="lst-img-edit-btn" onclick="editLstImg()"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;margin-right:3px;"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit Image</button>
     </div>
     <div class="lstbody">
       <div style="display:flex;align-items:center;gap:4px;">
@@ -244,7 +244,7 @@ function renderDetails() {
       </div>
 
       <div style="display:flex;gap:6px;margin-top:16px;">
-        <button class="btn-pri" onclick="editLstFull()">✏ Edit Full Details</button>
+        <button class="btn-pri" onclick="editLstFull()"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;margin-right:3px;"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit Full Details</button>
       </div>
       <div class="info-note" style="margin-top:10px;">Changes save instantly and appear on your public profile.</div>
     </div>

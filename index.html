@@ -36,7 +36,14 @@ body{padding-bottom:62px;overflow-x:hidden;}
 <!-- ============ AUTH ============ -->
 <div class="auth-wrap">
   <div class="auth-hero">
-    <div class="auth-hero-logo">🏔 MyPahad</div>
+    <div class="auth-hero-logo" style="display:flex;align-items:center;justify-content:center;gap:6px;color:#ffffff;font-size:24px;font-weight:700;">
+      <svg viewBox="0 0 690 690" style="width:28px;height:28px;" role="img" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="170,480 310,200 450,480" fill="currentColor" opacity="0.18" />
+        <polygon points="310,480 460,240 610,480" fill="currentColor" opacity="0.30" />
+        <polygon points="210,480 370,170 530,480" fill="currentColor" opacity="0.80" />
+      </svg>
+      <span>MyPahad</span>
+    </div>
     <div class="auth-hero-sub">Partner &amp; Business Portal</div>
   </div>
   <div style="padding:0 12px 14px;">
@@ -103,7 +110,18 @@ async function doLogin(){
   const e=document.getElementById('le').value.trim(),p=document.getElementById('lp').value;
   document.getElementById('lerr').textContent='';
   const {data,error}=await sb.auth.signInWithPassword({email:e,password:p});
-  if(error){document.getElementById('lerr').textContent=error.message;return;}
+  if(error){
+    const msg = error.message.toLowerCase();
+    if(msg.includes('invalid login credentials') || msg.includes('user not found') || msg.includes('email not confirmed')){
+      document.getElementById('remail').value=e;
+      document.getElementById('rpass').value=p;
+      authTab('reg');
+      document.getElementById('rerr').textContent="Account not found. Create your account first!";
+      return;
+    }
+    document.getElementById('lerr').textContent=error.message;
+    return;
+  }
   window.location.href='profile.html';
 }
 
@@ -166,6 +184,11 @@ async function init(){
   const ra=document.getElementById('rarea');
   areas?.forEach(a=>ra.appendChild(new Option(a.name,a.id)));
   await refreshCatCache();
+  
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('tab') === 'register'){
+    authTab('reg');
+  }
 }
 window.addEventListener('DOMContentLoaded',init);
 </script>
