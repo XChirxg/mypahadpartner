@@ -287,6 +287,10 @@ async function saveNewLst(){
   errEl.textContent='';
   if(!name){errEl.textContent='Item name is required.';return;}
 
+  const imf=document.getElementById('eimg').files[0];
+  const urlInp=document.getElementById('eimgurl').value.trim();
+  if(!imf && !urlInp){errEl.textContent='Image is required. Please upload an image file or paste an image URL.';return;}
+
   const btn=document.getElementById('save-btn');
   btn.textContent='Saving…';btn.disabled=true;
 

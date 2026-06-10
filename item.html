@@ -445,6 +445,11 @@ function editLstImg() {
     const f = document.getElementById('le-imgf').files[0];
     const url = document.getElementById('le-imgurl').value.trim();
     let image_url = l.image_url;
+    if (!f && !url && (!document.getElementById('le-imgp').src || document.getElementById('le-imgp').style.display === 'none')) {
+      toast('Image is required. Please upload an image file or paste an image URL.');
+      btn.textContent = 'Save'; btn.disabled = false;
+      return;
+    }
     try {
       if (f) {
         image_url = await uploadToCloudinary(f);

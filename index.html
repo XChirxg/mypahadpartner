@@ -178,7 +178,11 @@ async function init(){
   if(session){window.location.href='profile.html';return;}
   const {data:areas}=await sb.from('areas').select('*').eq('is_active',true).order('name');
   const ra=document.getElementById('rarea');
-  areas?.forEach(a=>ra.appendChild(new Option(a.name,a.id)));
+  areas?.forEach(a => {
+    if (a.name && a.name.toLowerCase() !== 'mypahad') {
+      ra.appendChild(new Option(a.name, a.id));
+    }
+  });
   await refreshCatCache();
   
   const params = new URLSearchParams(window.location.search);
